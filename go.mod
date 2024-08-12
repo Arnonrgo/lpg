@@ -8,7 +8,6 @@ require (
 	github.com/kamstrup/intmap v0.4.0
 	github.com/stretchr/testify v1.9.0
 	github.com/tidwall/btree v1.7.0
-	modernc.org/b/v2 v2.1.0
 )
 
 require (

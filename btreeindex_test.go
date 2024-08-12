@@ -6,7 +6,6 @@ import (
 	"github.com/kamstrup/intmap"
 	btree2 "github.com/tidwall/btree"
 	"math/rand/v2"
-	b2 "modernc.org/b/v2"
 	"testing"
 )
 
@@ -40,33 +39,6 @@ func BenchmarkGetTree2(b *testing.B) {
 
 func cmp2(a int64, b int64) int {
 	return cmp.Compare(a, b)
-}
-
-func BenchmarkSetTree3(b *testing.B) {
-	tree := b2.TreeNew[int64, int](cmp2)
-	// get random number out of 100000NewWith(16, ComparePropertyValue)
-	for i := 0; i < b.N; i++ {
-		rnd := rand.Int64N(1_000_000)
-		tree.Set(rnd, i)
-		//rnd = rand.Int64N(1_000_000)
-		//tree.Get(rnd)
-	}
-
-}
-
-func BenchmarkGetTree3(b *testing.B) {
-	tree := b2.TreeNew[int64, int](cmp2)
-	// get random number out of 100000NewWith(16, ComparePropertyValue)
-	for i := 0; i < 1_000_000; i++ {
-		rnd := rand.Int64N(1_000_000)
-		tree.Set(rnd, i)
-	}
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		rnd := rand.Int64N(1_000_000)
-		tree.Get(rnd)
-	}
-
 }
 
 func BenchmarkFastSet(b *testing.B) {

@@ -26,47 +26,6 @@ type ordered interface {
 }
 
 type properties map[string]any
-type props[T ordered] struct {
-	m map[string]T
-}
-
-func (p *props[T]) getProp(key string) (T, bool) {
-	if p.m == nil {
-		var result T
-		return result, false
-	}
-	x, ok := p.m[key]
-	return x, ok
-}
-func (p *props[T]) forEachProp(f func(string, T) bool) bool {
-	if p == nil {
-		return true
-	}
-	for k, v := range p.m {
-		if !f(k, v) {
-			return false
-		}
-	}
-	return true
-}
-
-func (p *props[T]) less(a, b T) bool {
-	return a < b
-}
-
-func (p *props[T]) String() string {
-	elements := make([]string, 0, len(p.m))
-	for k, v := range p.m {
-		//if _, node := v.(*Node); node {
-		//	continue
-		//}
-		//if _, edge := v.(*Edge); edge {
-		//	continue
-		//}
-		elements = append(elements, fmt.Sprintf("%s:%v", k, v))
-	}
-	return "{" + strings.Join(elements, " ") + "}"
-}
 
 // GetProperty returns the value for the key, and whether or not key
 // exists. p can be nil
@@ -270,9 +229,9 @@ func (p properties) String() string {
 }
 
 // lookup proprs from source. allocate to target
-func (p properties) clone(sourceGraph, targetGraph *Graph, cloneProperty func(string, interface{}) interface{}) properties {
-	ret := make(properties, len(p))
-	for k, v := range p {
+func (p *properties) clone(sourceGraph, targetGraph *Graph, cloneProperty func(string, interface{}) interface{}) properties {
+	ret := make(properties, len(*p))
+	for k, v := range *p {
 		ret[k] = cloneProperty(k, v)
 	}
 	return ret

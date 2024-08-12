@@ -98,24 +98,24 @@ func (set *NodeSet) Add(node *Node) {
 	set.set.add(node.id, node)
 }
 
-func (set NodeSet) Remove(node *Node) {
+func (set *NodeSet) Remove(node *Node) {
 	set.set.remove(node.id)
 }
 
-func (set NodeSet) Has(node *Node) bool {
+func (set *NodeSet) Has(node *Node) bool {
 	return set.set.has(node.id)
 }
 
-func (set NodeSet) Len() int {
+func (set *NodeSet) Len() int {
 	return set.set.size()
 }
 
-func (set NodeSet) Iterator() NodeIterator {
+func (set *NodeSet) Iterator() NodeIterator {
 	i := set.set.iterator()
 	return nodeIterator{i}
 }
 
-func (set NodeSet) Slice() []*Node {
+func (set *NodeSet) Slice() []*Node {
 	return NodeSlice(set.Iterator())
 }
 
@@ -134,19 +134,19 @@ func (set *EdgeSet) Add(edge *Edge) {
 	set.set.add(edge.id, edge)
 }
 
-func (set EdgeSet) Remove(edge *Edge) {
+func (set *EdgeSet) Remove(edge *Edge) {
 	set.set.remove(edge.id)
 }
 
-func (set EdgeSet) Len() int {
+func (set *EdgeSet) Len() int {
 	return set.set.size()
 }
 
-func (set EdgeSet) Iterator() EdgeIterator {
+func (set *EdgeSet) Iterator() EdgeIterator {
 	i := set.set.iterator()
 	return edgeIterator{i}
 }
 
-func (set EdgeSet) Slice() []*Edge {
+func (set *EdgeSet) Slice() []*Edge {
 	return EdgeSlice(set.Iterator())
 }
