@@ -14,9 +14,7 @@
 
 package lpg
 
-import (
-	"container/list"
-)
+import "container/list"
 
 // An Iterator iterates the items of a collection
 type Iterator interface {

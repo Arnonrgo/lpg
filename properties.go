@@ -19,7 +19,54 @@ import (
 	"strings"
 )
 
+type ordered interface {
+	~int | ~int8 | ~int16 | ~int32 | ~int64 |
+		~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uintptr |
+		~float32 | ~float64 | ~string
+}
+
 type properties map[string]any
+type props[T ordered] struct {
+	m map[string]T
+}
+
+func (p *props[T]) getProp(key string) (T, bool) {
+	if p.m == nil {
+		var result T
+		return result, false
+	}
+	x, ok := p.m[key]
+	return x, ok
+}
+func (p *props[T]) forEachProp(f func(string, T) bool) bool {
+	if p == nil {
+		return true
+	}
+	for k, v := range p.m {
+		if !f(k, v) {
+			return false
+		}
+	}
+	return true
+}
+
+func (p *props[T]) less(a, b T) bool {
+	return a < b
+}
+
+func (p *props[T]) String() string {
+	elements := make([]string, 0, len(p.m))
+	for k, v := range p.m {
+		//if _, node := v.(*Node); node {
+		//	continue
+		//}
+		//if _, edge := v.(*Edge); edge {
+		//	continue
+		//}
+		elements = append(elements, fmt.Sprintf("%s:%v", k, v))
+	}
+	return "{" + strings.Join(elements, " ") + "}"
+}
 
 // GetProperty returns the value for the key, and whether or not key
 // exists. p can be nil

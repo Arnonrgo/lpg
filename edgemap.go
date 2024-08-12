@@ -157,7 +157,7 @@ func (em edgeMap) iteratorLabel(label string, listIndex int) EdgeIterator {
 	return edgeIterator{&edgeListIterator{next: ell.edges.head, n: ell.edges.n, ix: listIndex}}
 }
 
-func (em edgeMap) iteratorAnyLabel(labels StringSet, listIndex int) EdgeIterator {
+func (em edgeMap) iteratorAnyLabel(labels *StringSet, listIndex int) EdgeIterator {
 	if em.n == 0 {
 		return edgeIterator{emptyIterator{}}
 	}

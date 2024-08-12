@@ -14,10 +14,14 @@
 
 package lpg
 
-type index interface {
-	add(value interface{}, id int, item interface{})
-	remove(value interface{}, id int)
-	find(value interface{}) Iterator
+type Item interface {
+	any
+}
+
+type index[V ordered, I Item] interface {
+	add(value V, id int, item I)
+	remove(value V, id int)
+	find(value V) Iterator
 	valueItr() Iterator
 }
 
@@ -31,53 +35,57 @@ const (
 type graphIndex struct {
 	nodesByLabel NodeMap
 
-	nodeProperties map[string]index
-	edgeProperties map[string]index
+	nodeProperties    map[string]index[string, *Node]
+	nodeIntProperties map[string]index[int64, *Node]
+	edgeProperties    map[string]index[string, *Edge]
+	edgeIntProperties map[string]index[int64, *Edge]
 }
 
 func newGraphIndex() graphIndex {
 	return graphIndex{
 		nodesByLabel:   *NewNodeMap(),
-		nodeProperties: make(map[string]index),
-		edgeProperties: make(map[string]index),
+		nodeProperties: make(map[string]index[string, *Node]),
+		edgeProperties: make(map[string]index[string, *Edge]),
 	}
 }
 
-// NodePropertyIndex sets up an index for the given node property
+// todo enforce string properies only
+// NodePropertyIndex sets up an index for the given node property (only support String properties
 func (g *graphIndex) NodePropertyIndex(propertyName string, graph *Graph, it IndexType) {
 	_, exists := g.nodeProperties[propertyName]
 	if exists {
 		return
 	}
-	var ix index
+	var ix index[string, *Node]
 	if it == BtreeIndex {
-		ix = &setTree{}
+		ix = &setTree[string, *Node]{}
 	} else {
-		ix = &hashIndex{}
+		ix = &hashIndex[string, *Node]{}
 	}
 	g.nodeProperties[propertyName] = ix
 	// Reindex
 	for nodes := graph.GetNodes(); nodes.Next(); {
 		node := nodes.Node()
 		value, ok := node.properties[propertyName]
+		val := value.(string)
 		if ok {
-			ix.add(value, node.id, node)
+			ix.add(val, node.id, node)
 		}
 	}
 }
 
-func (g *graphIndex) isNodePropertyIndexed(propertyName string) index {
+func (g *graphIndex) isNodePropertyIndexed(propertyName string) index[string, *Node] {
 	return g.nodeProperties[propertyName]
 }
 
-func (g *graphIndex) isEdgePropertyIndexed(propertyName string) index {
+func (g *graphIndex) isEdgePropertyIndexed(propertyName string) index[string, *Edge] {
 	return g.edgeProperties[propertyName]
 }
 
 // GetIteratorForNodeProperty returns an iterator for the given
 // key/value, and the max size of the resultset. If no index found,
 // returns nil,-1
-func (g *graphIndex) GetIteratorForNodeProperty(key string, value interface{}) NodeIterator {
+func (g *graphIndex) GetIteratorForNodeProperty(key string, value string) NodeIterator {
 	index, found := g.nodeProperties[key]
 	if !found {
 		return nil
@@ -106,7 +114,7 @@ func (g *graphIndex) EdgesWithProperty(key string) EdgeIterator {
 	return edgeIterator{index.valueItr()}
 }
 
-func (g *graphIndex) addNodeToIndex(node *Node, graph *Graph) {
+func (g *graphIndex) addNodeToIndex(node *Node) {
 	g.nodesByLabel.Add(node)
 
 	for k, v := range node.properties {
@@ -114,11 +122,12 @@ func (g *graphIndex) addNodeToIndex(node *Node, graph *Graph) {
 		if !found {
 			continue
 		}
-		index.add(v, node.id, node)
+		val := v.(string)
+		index.add(val, node.id, node)
 	}
 }
 
-func (g *graphIndex) removeNodeFromIndex(node *Node, graph *Graph) {
+func (g *graphIndex) removeNodeFromIndex(node *Node) {
 	g.nodesByLabel.Remove(node)
 
 	for k, v := range node.properties {
@@ -126,7 +135,8 @@ func (g *graphIndex) removeNodeFromIndex(node *Node, graph *Graph) {
 		if !found {
 			continue
 		}
-		index.remove(v, node.id)
+		val := v.(string)
+		index.remove(val, node.id)
 	}
 }
 
@@ -136,19 +146,20 @@ func (g *graphIndex) EdgePropertyIndex(propertyName string, graph *Graph, it Ind
 	if exists {
 		return
 	}
-	var ix index
+	var ix index[string, *Edge]
 	if it == BtreeIndex {
-		ix = &setTree{}
+		ix = &setTree[string, *Edge]{}
 	} else {
-		ix = &hashIndex{}
+		ix = &hashIndex[string, *Edge]{}
 	}
 	g.edgeProperties[propertyName] = ix
 	// Reindex
 	for edges := graph.GetEdges(); edges.Next(); {
 		edge := edges.Edge()
 		value, ok := edge.properties[propertyName]
+		val := value.(string)
 		if ok {
-			ix.add(value, edge.id, edge)
+			ix.add(val, edge.id, edge)
 		}
 	}
 }
@@ -159,7 +170,8 @@ func (g *graphIndex) addEdgeToIndex(edge *Edge, graph *Graph) {
 		if !found {
 			continue
 		}
-		index.add(v, edge.id, edge)
+		val := v.(string)
+		index.add(val, edge.id, edge)
 	}
 }
 
@@ -169,14 +181,15 @@ func (g *graphIndex) removeEdgeFromIndex(edge *Edge, graph *Graph) {
 		if !found {
 			continue
 		}
-		index.remove(v, edge.id)
+		val := v.(string)
+		index.remove(val, edge.id)
 	}
 }
 
 // GetIteratorForEdgeProperty returns an iterator for the given
 // key/value, and the max size of the resultset. If no index found,
 // returns nil,-1
-func (g *graphIndex) GetIteratorForEdgeProperty(key string, value interface{}) EdgeIterator {
+func (g *graphIndex) GetIteratorForEdgeProperty(key string, value string) EdgeIterator {
 	index, found := g.edgeProperties[key]
 	if !found {
 		return nil

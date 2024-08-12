@@ -23,7 +23,7 @@ import (
 // A Node represents a graph node.
 type Node struct {
 	next, prev *Node
-	labels     StringSet
+	labels     *StringSet
 	properties
 	graph    *Graph
 	incoming edgeMap
@@ -44,7 +44,7 @@ func (node *Node) ForEachProperty(f func(string, interface{}) bool) bool {
 func (node *Node) GetGraph() *Graph { return node.graph }
 
 // GetLabels returns a copy of the node labels
-func (node *Node) GetLabels() StringSet { return node.labels.Clone() }
+func (node *Node) GetLabels() *StringSet { return node.labels.Clone() }
 
 // HasLabel returns true if the node has the given label
 func (node *Node) HasLabel(s string) bool { return node.labels.Has(s) }
@@ -80,15 +80,15 @@ func (node *Node) GetEdgesWithLabel(dir EdgeDir, label string) EdgeIterator {
 }
 
 // Returns an edge iterator for incoming or outgoingn edges that has the given labels
-func (node *Node) GetEdgesWithAnyLabel(dir EdgeDir, labels StringSet) EdgeIterator {
+func (node *Node) GetEdgesWithAnyLabel(dir EdgeDir, labels *StringSet) EdgeIterator {
 	switch dir {
 	case IncomingEdge:
-		if labels.Len() == 0 {
+		if labels == nil || labels.Len() == 0 {
 			return node.incoming.iterator(2)
 		}
 		return node.incoming.iteratorAnyLabel(labels, 2)
 	case OutgoingEdge:
-		if labels.Len() == 0 {
+		if labels == nil || labels.Len() == 0 {
 			return node.outgoing.iterator(1)
 		}
 		return node.outgoing.iteratorAnyLabel(labels, 1)
@@ -99,7 +99,7 @@ func (node *Node) GetEdgesWithAnyLabel(dir EdgeDir, labels StringSet) EdgeIterat
 }
 
 // SetLabels sets the node labels
-func (node *Node) SetLabels(labels StringSet) {
+func (node *Node) SetLabels(labels *StringSet) {
 	node.graph.setNodeLabels(node, labels)
 }
 

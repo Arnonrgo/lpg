@@ -19,18 +19,14 @@ import (
 )
 
 // A hashIndex is a hash table index
-type hashIndex struct {
-	values   map[interface{}]*fastSet
+type hashIndex[V ordered, I Item] struct {
+	values   map[V]*fastSet
 	elements list.List
 }
 
-func (ix *hashIndex) add(value interface{}, id int, item interface{}) {
+func (ix *hashIndex[V, I]) add(value V, id int, item I) {
 	if ix.values == nil {
-		ix.values = make(map[interface{}]*fastSet)
-	}
-
-	if native, ok := value.(WithNativeValue); ok {
-		value = native.GetNativeValue()
+		ix.values = make(map[V]*fastSet)
 	}
 
 	el := ix.elements.PushBack(item)
@@ -42,12 +38,9 @@ func (ix *hashIndex) add(value interface{}, id int, item interface{}) {
 	fs.add(id, el)
 }
 
-func (ix *hashIndex) remove(value interface{}, id int) {
+func (ix *hashIndex[V, I]) remove(value V, id int) {
 	if ix.values == nil {
 		return
-	}
-	if native, ok := value.(WithNativeValue); ok {
-		value = native.GetNativeValue()
 	}
 	fs, ok := ix.values[value]
 	if !ok {
@@ -62,12 +55,9 @@ func (ix *hashIndex) remove(value interface{}, id int) {
 }
 
 // find returns the iterator and expected size.
-func (ix *hashIndex) find(value interface{}) Iterator {
+func (ix *hashIndex[V, I]) find(value V) Iterator {
 	if ix.values == nil {
 		return emptyIterator{}
-	}
-	if native, ok := value.(WithNativeValue); ok {
-		value = native.GetNativeValue()
 	}
 	v, found := ix.values[value]
 	if !found {
@@ -77,7 +67,7 @@ func (ix *hashIndex) find(value interface{}) Iterator {
 	return withSize(itr, v.size())
 }
 
-func (ix *hashIndex) valueItr() Iterator {
+func (ix *hashIndex[V, I]) valueItr() Iterator {
 	if ix.values == nil {
 		return emptyIterator{}
 	}

@@ -33,7 +33,7 @@ func TestPattern(t *testing.T) {
 	pat := Pattern{
 		{},
 		{Min: 1, Max: 1},
-		{Name: "nodes", Labels: StringSet{}, Properties: map[string]interface{}{"key": "value"}}}
+		{Name: "nodes", Labels: NewStringSet(), Properties: map[string]interface{}{"key": "value"}}}
 	if _, i := pat.getFastestElement(graph, map[string]*PatternSymbol{}); i != 2 {
 		t.Errorf("Expecting 2, got %d", i)
 	}
@@ -89,6 +89,10 @@ func TestPathPattern(t *testing.T) {
 	nodes[4].SetLabels(NewStringSet("n4"))
 	nodes[5].SetLabels(NewStringSet("n5"))
 	nodes[6].SetLabels(NewStringSet("n6"))
+
+	symbols := make(map[string]*PatternSymbol)
+	acc := &DefaultMatchAccumulator{}
+
 	pat := Pattern{
 		{},
 		{Min: 1, Max: 1},
@@ -96,8 +100,7 @@ func TestPathPattern(t *testing.T) {
 		{Min: 1, Max: 1},
 		{},
 	}
-	symbols := make(map[string]*PatternSymbol)
-	acc := &DefaultMatchAccumulator{}
+
 	if err := pat.Run(graph, symbols, acc); err != nil {
 		t.Error(err)
 		return
@@ -169,9 +172,9 @@ func TestReverseSimplePath(t *testing.T) {
 	nodes[0].SetLabels(NewStringSet("a"))
 	nodes[1].SetLabels(NewStringSet("b"))
 	pat := Pattern{
-		{Name: "n", Labels: StringSet{}, Properties: map[string]interface{}{"key": "value"}},
+		{Name: "n", Labels: NewStringSet(), Properties: map[string]interface{}{"key": "value"}},
 		{Min: -1, Max: -1, ToLeft: true},
-		{Name: "n2", Labels: StringSet{}}}
+		{Name: "n2", Labels: NewStringSet()}}
 	symbols := make(map[string]*PatternSymbol)
 	acc := &DefaultMatchAccumulator{}
 	if err := pat.Run(graph, symbols, acc); err != nil {
@@ -199,7 +202,7 @@ func TestOCGetPattern(t *testing.T) {
 	pat := Pattern{
 		{Name: "this", Labels: NewStringSet("c1"), Properties: map[string]interface{}{}},
 		{Min: 1, Max: 1, ToLeft: true},
-		{Name: "", Labels: StringSet{}, Properties: map[string]interface{}{}},
+		{Name: "", Labels: NewStringSet(), Properties: map[string]interface{}{}},
 		{Min: 1, Max: 1},
 		{Name: "target", Labels: NewStringSet("c2"), Properties: map[string]interface{}{}},
 	}
@@ -227,7 +230,7 @@ func TestOCGetPattern2(t *testing.T) {
 	pat := Pattern{
 		{Name: "this", Labels: NewStringSet("c1"), Properties: map[string]interface{}{}},
 		{Min: 1, Max: 1, ToLeft: true},
-		{Name: "", Labels: StringSet{}, Properties: map[string]interface{}{}},
+		{Name: "", Labels: NewStringSet(), Properties: map[string]interface{}{}},
 		{Min: 1, Max: 1},
 		{Name: "target", Labels: NewStringSet("c2"), Properties: map[string]interface{}{}},
 	}
@@ -394,9 +397,9 @@ func testSimpleDirectedPathPattern(t *testing.T, withIndex bool) {
 	nodes[5].SetProperty("key", "value")
 	nodes[6].SetProperty("key", "value")
 	pat := Pattern{
-		{Name: "n", Labels: StringSet{}, Properties: map[string]interface{}{"key": "value"}},
+		{Name: "n", Labels: NewStringSet(), Properties: map[string]interface{}{"key": "value"}},
 		{Min: 1, Max: 1},
-		{Name: "n2", Labels: StringSet{}}}
+		{Name: "n2", Labels: NewStringSet()}}
 	symbols := make(map[string]*PatternSymbol)
 	acc := &DefaultMatchAccumulator{}
 	if err := pat.Run(graph, symbols, acc); err != nil {
@@ -430,9 +433,9 @@ func testSimpleDirectedPathPatternWithSelfLoops(t *testing.T, withIndex bool) {
 	nodes[5].SetProperty("key", "value")
 	nodes[6].SetProperty("key", "value")
 	pat := Pattern{
-		{Name: "n", Labels: StringSet{}, Properties: map[string]interface{}{"key": "value"}},
+		{Name: "n", Labels: NewStringSet(), Properties: map[string]interface{}{"key": "value"}},
 		{Min: 1, Max: 1},
-		{Name: "n2", Labels: StringSet{}}}
+		{Name: "n2", Labels: NewStringSet()}}
 	symbols := make(map[string]*PatternSymbol)
 	acc := &DefaultMatchAccumulator{}
 	if err := pat.Run(graph, symbols, acc); err != nil {
@@ -475,9 +478,9 @@ func testSimpleDirectedPathPatternCircleGraph(t *testing.T, withIndex bool) {
 	nodes[6].SetLabels(NewStringSet("n6"))
 	nodes[6].SetProperty("key", "value")
 	pat := Pattern{
-		{Name: "n", Labels: StringSet{}, Properties: map[string]interface{}{"key": "value"}},
+		{Name: "n", Labels: NewStringSet(), Properties: map[string]interface{}{"key": "value"}},
 		{Min: 1, Max: 1},
-		{Name: "n2", Labels: StringSet{}}}
+		{Name: "n2", Labels: NewStringSet()}}
 	symbols := make(map[string]*PatternSymbol)
 	acc := &DefaultMatchAccumulator{}
 	if err := pat.Run(graph, symbols, acc); err != nil {
@@ -512,9 +515,9 @@ func testSimplePathPattern(t *testing.T, withIndex bool) {
 	nodes[2].SetProperty("key", "value")
 	nodes[8].SetProperty("key", "value")
 	pat := Pattern{
-		{Name: "n", Labels: StringSet{}, Properties: map[string]interface{}{"key": "value"}},
+		{Name: "n", Labels: NewStringSet(), Properties: map[string]interface{}{"key": "value"}},
 		{Min: -1, Max: 1, Undirected: true},
-		{Name: "n2", Labels: StringSet{}}}
+		{Name: "n2", Labels: NewStringSet()}}
 	symbols := make(map[string]*PatternSymbol)
 	acc := &DefaultMatchAccumulator{}
 	if err := pat.Run(graph, symbols, acc); err != nil {
@@ -547,9 +550,9 @@ func testSimplePathPatternWithSelfLoops(t *testing.T, withIndex bool) {
 	nodes[2].SetProperty("key", "value")
 	nodes[3].SetProperty("key", "value")
 	pat := Pattern{
-		{Name: "n", Labels: StringSet{}, Properties: map[string]interface{}{"key": "value"}},
+		{Name: "n", Labels: NewStringSet(), Properties: map[string]interface{}{"key": "value"}},
 		{Min: -1, Max: 1, Undirected: true},
-		{Name: "n2", Labels: StringSet{}}}
+		{Name: "n2", Labels: NewStringSet()}}
 	symbols := make(map[string]*PatternSymbol)
 	acc := &DefaultMatchAccumulator{}
 	if err := pat.Run(graph, symbols, acc); err != nil {
@@ -588,9 +591,9 @@ func testSimplePathPatternCircleGraph(t *testing.T, withIndex bool) {
 	nodes[2].SetProperty("key", "value")
 	nodes[8].SetProperty("key", "value")
 	pat := Pattern{
-		{Name: "n", Labels: StringSet{}, Properties: map[string]interface{}{"key": "value"}},
+		{Name: "n", Labels: NewStringSet(), Properties: map[string]interface{}{"key": "value"}},
 		{Min: -1, Max: 1, Undirected: true},
-		{Name: "n2", Labels: StringSet{}}}
+		{Name: "n2", Labels: NewStringSet()}}
 	symbols := make(map[string]*PatternSymbol)
 	acc := &DefaultMatchAccumulator{}
 	if err := pat.Run(graph, symbols, acc); err != nil {
@@ -628,9 +631,9 @@ func testVariablePathPattern(t *testing.T, withIndex bool) {
 	nodes[2].SetProperty("key", "value")
 	nodes[3].SetProperty("key", "value")
 	pat := Pattern{
-		{Name: "n", Labels: StringSet{}, Properties: map[string]interface{}{"key": "value"}},
+		{Name: "n", Labels: NewStringSet(), Properties: map[string]interface{}{"key": "value"}},
 		{Min: -1, Max: -1, Undirected: true},
-		{Name: "n2", Labels: StringSet{}, Properties: map[string]interface{}{"key": "value"}}}
+		{Name: "n2", Labels: NewStringSet(), Properties: map[string]interface{}{"key": "value"}}}
 	symbols := make(map[string]*PatternSymbol)
 	acc := &DefaultMatchAccumulator{}
 	if err := pat.Run(graph, symbols, acc); err != nil {
@@ -672,9 +675,9 @@ func testVariablePathPatternWithSelfLoops(t *testing.T, withIndex bool) {
 	nodes[2].SetLabels(NewStringSet("c"))
 	nodes[2].SetProperty("key", "value")
 	pat := Pattern{
-		{Name: "n", Labels: StringSet{}, Properties: map[string]interface{}{"key": "value"}},
+		{Name: "n", Labels: NewStringSet(), Properties: map[string]interface{}{"key": "value"}},
 		{Min: -1, Max: -1},
-		{Name: "n2", Labels: StringSet{}, Properties: map[string]interface{}{"key": "value"}}}
+		{Name: "n2", Labels: NewStringSet(), Properties: map[string]interface{}{"key": "value"}}}
 	symbols := make(map[string]*PatternSymbol)
 	acc := &DefaultMatchAccumulator{}
 	if err := pat.Run(graph, symbols, acc); err != nil {
@@ -708,9 +711,9 @@ func testVariablePathPatternCircleGraph(t *testing.T, withIndex bool) {
 	nodes[2].SetProperty("key", "value")
 	nodes[3].SetProperty("key", "value")
 	pat := Pattern{
-		{Name: "n", Labels: StringSet{}, Properties: map[string]interface{}{"key": "value"}},
+		{Name: "n", Labels: NewStringSet(), Properties: map[string]interface{}{"key": "value"}},
 		{Min: -1, Max: -1, Undirected: true},
-		{Name: "n2", Labels: StringSet{}, Properties: map[string]interface{}{"key": "value"}}}
+		{Name: "n2", Labels: NewStringSet(), Properties: map[string]interface{}{"key": "value"}}}
 	symbols := make(map[string]*PatternSymbol)
 	acc := &DefaultMatchAccumulator{}
 	if err := pat.Run(graph, symbols, acc); err != nil {
@@ -750,9 +753,9 @@ func testPathLengthTwoPattern(t *testing.T, withIndex bool) {
 	nodes[2].SetProperty("key", "value")
 	nodes[4].SetProperty("key", "value")
 	pat := Pattern{
-		{Name: "n", Labels: StringSet{}, Properties: map[string]interface{}{"key": "value"}},
+		{Name: "n", Labels: NewStringSet(), Properties: map[string]interface{}{"key": "value"}},
 		{Min: 2, Max: 2, Undirected: true},
-		{Name: "n2", Labels: StringSet{}, Properties: map[string]interface{}{"key": "value"}}}
+		{Name: "n2", Labels: NewStringSet(), Properties: map[string]interface{}{"key": "value"}}}
 	symbols := make(map[string]*PatternSymbol)
 	acc := &DefaultMatchAccumulator{}
 	if err := pat.Run(graph, symbols, acc); err != nil {
@@ -785,9 +788,9 @@ func testPathLengthTwoPatternWithSelfLoops(t *testing.T, withIndex bool) {
 	nodes[4].SetProperty("key", "value")
 	nodes[6].SetProperty("key", "value")
 	pat := Pattern{
-		{Name: "n", Labels: StringSet{}, Properties: map[string]interface{}{"key": "value"}},
+		{Name: "n", Labels: NewStringSet(), Properties: map[string]interface{}{"key": "value"}},
 		{Min: 2, Max: 2, Undirected: true},
-		{Name: "n2", Labels: StringSet{}, Properties: map[string]interface{}{"key": "value"}}}
+		{Name: "n2", Labels: NewStringSet(), Properties: map[string]interface{}{"key": "value"}}}
 	symbols := make(map[string]*PatternSymbol)
 	acc := &DefaultMatchAccumulator{}
 	if err := pat.Run(graph, symbols, acc); err != nil {
@@ -825,9 +828,9 @@ func testPathLengthTwoPatternCircleGraph(t *testing.T, withIndex bool) {
 	nodes[4].SetLabels(NewStringSet("n7"))
 	nodes[4].SetProperty("key", "value")
 	pat := Pattern{
-		{Name: "n", Labels: StringSet{}, Properties: map[string]interface{}{"key": "value"}},
+		{Name: "n", Labels: NewStringSet(), Properties: map[string]interface{}{"key": "value"}},
 		{Min: 2, Max: 2, Undirected: true},
-		{Name: "n2", Labels: StringSet{}, Properties: map[string]interface{}{"key": "value"}}}
+		{Name: "n2", Labels: NewStringSet(), Properties: map[string]interface{}{"key": "value"}}}
 	symbols := make(map[string]*PatternSymbol)
 	acc := &DefaultMatchAccumulator{}
 	if err := pat.Run(graph, symbols, acc); err != nil {
@@ -867,9 +870,9 @@ func benchmarkSimpleDirectedPathPattern(b *testing.B, withIndex bool) {
 	nodes[5].SetProperty("key", "value")
 	nodes[6].SetProperty("key", "value")
 	pat := Pattern{
-		{Name: "n", Labels: StringSet{}},
+		{Name: "n", Labels: NewStringSet()},
 		{Min: 1, Max: 1},
-		{Name: "n2", Labels: StringSet{}}}
+		{Name: "n2", Labels: NewStringSet()}}
 	symbols := make(map[string]*PatternSymbol)
 	acc := &DefaultMatchAccumulator{}
 	for n := 0; n < b.N; n++ {
@@ -882,9 +885,9 @@ func benchmarkSimpleDirectedPathPatternWithSelfLoops(b *testing.B, withIndex boo
 	nodes[2].SetProperty("key", "value")
 	nodes[8].SetProperty("key", "value")
 	pat := Pattern{
-		{Name: "n", Labels: StringSet{}},
+		{Name: "n", Labels: NewStringSet()},
 		{Min: -1, Max: 1},
-		{Name: "n2", Labels: StringSet{}}}
+		{Name: "n2", Labels: NewStringSet()}}
 	symbols := make(map[string]*PatternSymbol)
 	acc := &DefaultMatchAccumulator{}
 	for n := 0; n < b.N; n++ {
@@ -896,9 +899,9 @@ func benchmarkSimpleDirectedPathPatternCircleGraph(b *testing.B, withIndex bool)
 	nodes[2].SetProperty("key", "value")
 	nodes[8].SetProperty("key", "value")
 	pat := Pattern{
-		{Name: "n", Labels: StringSet{}},
+		{Name: "n", Labels: NewStringSet()},
 		{Min: -1, Max: 1},
-		{Name: "n2", Labels: StringSet{}}}
+		{Name: "n2", Labels: NewStringSet()}}
 	symbols := make(map[string]*PatternSymbol)
 	acc := &DefaultMatchAccumulator{}
 	for n := 0; n < b.N; n++ {
@@ -922,9 +925,9 @@ func benchmarkSimplePathPattern(b *testing.B, withIndex bool) {
 	nodes[2].SetProperty("key", "value")
 	nodes[8].SetProperty("key", "value")
 	pat := Pattern{
-		{Name: "n", Labels: StringSet{}},
+		{Name: "n", Labels: NewStringSet()},
 		{Min: -1, Max: 1, Undirected: true},
-		{Name: "n2", Labels: StringSet{}}}
+		{Name: "n2", Labels: NewStringSet()}}
 	symbols := make(map[string]*PatternSymbol)
 	acc := &DefaultMatchAccumulator{}
 	for n := 0; n < b.N; n++ {
@@ -937,9 +940,9 @@ func benchmarkSimplePathPatternWithSelfLoops(b *testing.B, withIndex bool) {
 	nodes[2].SetProperty("key", "value")
 	nodes[8].SetProperty("key", "value")
 	pat := Pattern{
-		{Name: "n", Labels: StringSet{}},
+		{Name: "n", Labels: NewStringSet()},
 		{Min: -1, Max: 1, Undirected: true},
-		{Name: "n2", Labels: StringSet{}}}
+		{Name: "n2", Labels: NewStringSet()}}
 	symbols := make(map[string]*PatternSymbol)
 	acc := &DefaultMatchAccumulator{}
 	for n := 0; n < b.N; n++ {
@@ -951,9 +954,9 @@ func benchmarkSimplePathPatternCircleGraph(b *testing.B, withIndex bool) {
 	nodes[2].SetProperty("key", "value")
 	nodes[8].SetProperty("key", "value")
 	pat := Pattern{
-		{Name: "n", Labels: StringSet{}},
+		{Name: "n", Labels: NewStringSet()},
 		{Min: -1, Max: 1, Undirected: true},
-		{Name: "n2", Labels: StringSet{}}}
+		{Name: "n2", Labels: NewStringSet()}}
 	symbols := make(map[string]*PatternSymbol)
 	acc := &DefaultMatchAccumulator{}
 	for n := 0; n < b.N; n++ {
@@ -977,9 +980,9 @@ func benchmarkVariablePathPattern(b *testing.B, withIndex bool) {
 	nodes[2].SetProperty("key", "value")
 	nodes[8].SetProperty("key", "value")
 	pat := Pattern{
-		{Name: "n", Labels: StringSet{}},
+		{Name: "n", Labels: NewStringSet()},
 		{Min: -1, Max: -1, Undirected: true},
-		{Name: "n2", Labels: StringSet{}}}
+		{Name: "n2", Labels: NewStringSet()}}
 	symbols := make(map[string]*PatternSymbol)
 	acc := &DefaultMatchAccumulator{}
 	for n := 0; n < b.N; n++ {
@@ -992,9 +995,9 @@ func benchmarkVariablePathPatternCircleGraph(b *testing.B, withIndex bool) {
 	nodes[2].SetProperty("key", "value")
 	nodes[8].SetProperty("key", "value")
 	pat := Pattern{
-		{Name: "n", Labels: StringSet{}},
+		{Name: "n", Labels: NewStringSet()},
 		{Min: -1, Max: -1, Undirected: true},
-		{Name: "n2", Labels: StringSet{}}}
+		{Name: "n2", Labels: NewStringSet()}}
 	symbols := make(map[string]*PatternSymbol)
 	acc := &DefaultMatchAccumulator{}
 	for n := 0; n < b.N; n++ {
@@ -1007,9 +1010,9 @@ func benchmarkVariablePathPatternWithSelfLoops(b *testing.B, withIndex bool) {
 	nodes[2].SetProperty("key", "value")
 	nodes[8].SetProperty("key", "value")
 	pat := Pattern{
-		{Name: "n", Labels: StringSet{}},
+		{Name: "n", Labels: NewStringSet()},
 		{Min: -1, Max: -1, Undirected: true},
-		{Name: "n2", Labels: StringSet{}}}
+		{Name: "n2", Labels: NewStringSet()}}
 	symbols := make(map[string]*PatternSymbol)
 	acc := &DefaultMatchAccumulator{}
 	for n := 0; n < b.N; n++ {
@@ -1033,9 +1036,9 @@ func benchmarkPathLengthTwoPattern(b *testing.B, withIndex bool) {
 	nodes[4].SetProperty("key", "value")
 	nodes[7].SetProperty("key", "value")
 	pat := Pattern{
-		{Name: "n", Labels: StringSet{}},
+		{Name: "n", Labels: NewStringSet()},
 		{Min: 2, Max: 2, Undirected: true},
-		{Name: "n2", Labels: StringSet{}}}
+		{Name: "n2", Labels: NewStringSet()}}
 	symbols := make(map[string]*PatternSymbol)
 	acc := &DefaultMatchAccumulator{}
 	for n := 0; n < b.N; n++ {
@@ -1047,9 +1050,9 @@ func benchmarkPathLengthTwoPatternWithSelfLoops(b *testing.B, withIndex bool) {
 	nodes[4].SetProperty("key", "value")
 	nodes[7].SetProperty("key", "value")
 	pat := Pattern{
-		{Name: "n", Labels: StringSet{}},
+		{Name: "n", Labels: NewStringSet()},
 		{Min: 2, Max: 2, Undirected: true},
-		{Name: "n2", Labels: StringSet{}}}
+		{Name: "n2", Labels: NewStringSet()}}
 	symbols := make(map[string]*PatternSymbol)
 	acc := &DefaultMatchAccumulator{}
 	for n := 0; n < b.N; n++ {
@@ -1061,9 +1064,9 @@ func benchmarkPathLengthTwoPatternCircleGraph(b *testing.B, withIndex bool) {
 	nodes[4].SetProperty("key", "value")
 	nodes[7].SetProperty("key", "value")
 	pat := Pattern{
-		{Name: "n", Labels: StringSet{}},
+		{Name: "n", Labels: NewStringSet()},
 		{Min: 2, Max: 2, Undirected: true},
-		{Name: "n2", Labels: StringSet{}}}
+		{Name: "n2", Labels: NewStringSet()}}
 	symbols := make(map[string]*PatternSymbol)
 	acc := &DefaultMatchAccumulator{}
 	for n := 0; n < b.N; n++ {

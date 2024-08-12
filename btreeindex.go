@@ -15,28 +15,29 @@
 package lpg
 
 import (
-	"github.com/emirpasic/gods/trees/btree"
+	"github.com/tidwall/btree"
 )
 
 // A setTree is a B-Tree of linkedhashsets
-type setTree struct {
-	tree *btree.Tree
+type setTree[V ordered, I Item] struct {
+	tree *btree.Map[V, *fastSet]
 }
 
-func (s *setTree) add(key interface{}, id int, item interface{}) {
+func (s *setTree[V, I]) add(key V, id int, item I) {
 	if s.tree == nil {
-		s.tree = btree.NewWith(16, ComparePropertyValue)
+		//s.tree = btree.NewWith(16, ComparePropertyValue)
+		s.tree = btree.NewMap[V, *fastSet](16)
 	}
 	v, found := s.tree.Get(key)
 	if !found {
 		v = newFastSet()
-		s.tree.Put(key, v)
+		s.tree.Set(key, v)
 	}
-	set := v.(*fastSet)
+	set := v
 	set.add(id, item)
 }
 
-func (s setTree) remove(key interface{}, id int) {
+func (s *setTree[V, I]) remove(key V, id int) {
 	if s.tree == nil {
 		return
 	}
@@ -44,15 +45,15 @@ func (s setTree) remove(key interface{}, id int) {
 	if !found {
 		return
 	}
-	set := v.(*fastSet)
+	set := v
 	set.remove(id)
 	if set.size() == 0 {
-		s.tree.Remove(key)
+		s.tree.Delete(key)
 	}
 }
 
 // find returns the iterator and expected size.
-func (s setTree) find(key interface{}) Iterator {
+func (s *setTree[V, I]) find(key V) Iterator {
 	if s.tree == nil {
 		return emptyIterator{}
 	}
@@ -60,22 +61,22 @@ func (s setTree) find(key interface{}) Iterator {
 	if !found {
 		return emptyIterator{}
 	}
-	set := v.(*fastSet)
+	set := v
 	itr := set.iterator()
 	return withSize(itr, set.size())
 }
 
-func (s setTree) valueItr() Iterator {
+func (s *setTree[V, I]) valueItr() Iterator {
 	if s.tree == nil {
 		return emptyIterator{}
 	}
-	treeItr := s.tree.Iterator()
+	treeItr := s.tree.Iter()
 	return &funcIterator{
 		iteratorFunc: func() Iterator {
 			if !treeItr.Next() {
 				return nil
 			}
-			set := treeItr.Value().(*fastSet)
+			set := treeItr.Value()
 			itr := set.iterator()
 			return withSize(itr, set.size())
 		},

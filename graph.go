@@ -14,6 +14,8 @@
 
 package lpg
 
+import "fmt"
+
 // A Graph is a labeled property graph containing nodes, and directed
 // edges combining those nodes.
 //
@@ -60,7 +62,7 @@ func (g *Graph) NewNode(labels []string, props map[string]interface{}) *Node {
 // FastNewNode creates a new node with the given labels and
 // properties. This version does not copy the labels and properties,
 // but uses the given label set and map directly
-func (g *Graph) FastNewNode(labels StringSet, props map[string]interface{}) *Node {
+func (g *Graph) FastNewNode(labels *StringSet, props map[string]interface{}) *Node {
 	node := &Node{
 		labels:     labels,
 		graph:      g,
@@ -133,7 +135,7 @@ func (g *Graph) GetNodes() NodeIterator {
 // more nodes than given in the set. The behavior of the returned
 // iterator is undefined if during iteration nodes are updated, new
 // nodes are added, or existing nodes are deleted.
-func (g *Graph) GetNodesWithAllLabels(labels StringSet) NodeIterator {
+func (g *Graph) GetNodesWithAllLabels(labels *StringSet) NodeIterator {
 	return g.index.nodesByLabel.IteratorAllLabels(labels)
 }
 
@@ -150,7 +152,7 @@ func (g *Graph) GetEdges() EdgeIterator {
 // given set. The behavior of the returned iterator is undefined if
 // during iteration edges are updated, new edges are added, or
 // existing edges are deleted.
-func (g *Graph) GetEdgesWithAnyLabel(set StringSet) EdgeIterator {
+func (g *Graph) GetEdgesWithAnyLabel(set *StringSet) EdgeIterator {
 	return g.allEdges.iteratorAnyLabel(set, 0)
 }
 
@@ -217,7 +219,7 @@ func (g *Graph) GetEdgesWithProperty(property string) EdgeIterator {
 // nodes that have all of the given labels and properties. If
 // allLabels is nil or empty, it does not look at the labels. If
 // properties is nil or empty, it does not look at the properties
-func (g *Graph) FindNodes(allLabels StringSet, properties map[string]interface{}) NodeIterator {
+func (g *Graph) FindNodes(allLabels *StringSet, properties map[string]interface{}) NodeIterator {
 	if allLabels.Len() == 0 && len(properties) == 0 {
 		// Return all nodes
 		return g.GetNodes()
@@ -232,7 +234,8 @@ func (g *Graph) FindNodes(allLabels StringSet, properties map[string]interface{}
 	propertyIterators := make(map[string]NodeIterator)
 	if len(properties) > 0 {
 		for k, v := range properties {
-			itr := g.index.GetIteratorForNodeProperty(k, v)
+			prop := fmt.Sprintf("%v", v)
+			itr := g.index.GetIteratorForNodeProperty(k, prop)
 			if itr == nil {
 				continue
 			}
@@ -286,14 +289,14 @@ func (g *Graph) FindNodes(allLabels StringSet, properties map[string]interface{}
 // properties. If labels is nil or empty, it does not look at the
 // labels. If properties is nil or empty, it does not look at the
 // properties
-func (g *Graph) FindEdges(labels StringSet, properties map[string]interface{}) EdgeIterator {
-	if labels.Len() == 0 && len(properties) == 0 {
+func (g *Graph) FindEdges(labels *StringSet, properties map[string]interface{}) EdgeIterator {
+	if (labels == nil || labels.Len() == 0) && len(properties) == 0 {
 		// Return all edges
 		return g.GetEdges()
 	}
 
 	var edgesByLabelItr EdgeIterator
-	if labels.Len() > 0 {
+	if labels != nil && labels.Len() > 0 {
 		edgesByLabelItr = g.GetEdgesWithAnyLabel(labels)
 	}
 	// Select the iterator with minimum max size
@@ -301,7 +304,8 @@ func (g *Graph) FindEdges(labels StringSet, properties map[string]interface{}) E
 	propertyIterators := make(map[string]EdgeIterator)
 	if len(properties) > 0 {
 		for k, v := range properties {
-			itr := g.index.GetIteratorForEdgeProperty(k, v)
+			prop := fmt.Sprintf("%v", v)
+			itr := g.index.GetIteratorForEdgeProperty(k, prop)
 			if itr == nil {
 				continue
 			}
@@ -353,9 +357,9 @@ func (g *Graph) FindEdges(labels StringSet, properties map[string]interface{}) E
 // GetNodeFilterFunc returns a filter function that can be used to select
 // nodes that have all the specified labels, with correct property
 // values
-func GetNodeFilterFunc(labels StringSet, properties map[string]interface{}) func(*Node) bool {
+func GetNodeFilterFunc(labels *StringSet, properties map[string]interface{}) func(*Node) bool {
 	return func(node *Node) (cmp bool) {
-		if labels.Len() > 0 {
+		if labels != nil && labels.Len() > 0 {
 			if !node.labels.HasAllSet(labels) {
 				return false
 			}
@@ -383,9 +387,9 @@ func GetNodeFilterFunc(labels StringSet, properties map[string]interface{}) func
 // GetEdgeFilterFunc returns a function that can be used to select edges
 // that have at least one of the specified labels, with correct
 // property values
-func GetEdgeFilterFunc(labels StringSet, properties map[string]interface{}) func(*Edge) bool {
+func GetEdgeFilterFunc(labels *StringSet, properties map[string]interface{}) func(*Edge) bool {
 	return func(edge *Edge) (cmp bool) {
-		if labels.Len() > 0 {
+		if labels != nil && labels.Len() > 0 {
 			if !labels.Has(edge.label) {
 				return false
 			}
@@ -410,7 +414,7 @@ func GetEdgeFilterFunc(labels StringSet, properties map[string]interface{}) func
 	}
 }
 
-func (g *Graph) setNodeLabels(node *Node, labels StringSet) {
+func (g *Graph) setNodeLabels(node *Node, labels *StringSet) {
 	g.index.nodesByLabel.Replace(node, node.GetLabels(), labels)
 	node.labels = labels.Clone()
 }
@@ -423,13 +427,15 @@ func (g *Graph) setNodeProperty(node *Node, key string, value interface{}) {
 		oldValue, exists := node.properties[key]
 		if exists {
 			if nix != nil {
-				nix.remove(oldValue, node.id)
+				prop := fmt.Sprintf("%v", oldValue)
+				nix.remove(prop, node.id)
 			}
 		}
 	}
 	node.properties[key] = value
 	if nix != nil {
-		nix.add(value, node.id, node)
+		prop := fmt.Sprintf("%v", value)
+		nix.add(prop, node.id, node)
 	}
 }
 
@@ -449,7 +455,7 @@ func (g *Graph) cloneNode(sourceGraph *Graph, sourceNode *Node, cloneProperty fu
 
 func (g *Graph) addNode(node *Node) {
 	g.allNodes.add(node)
-	g.index.addNodeToIndex(node, g)
+	g.index.addNodeToIndex(node)
 }
 
 func (g *Graph) removeNodeProperty(node *Node, key string) {
@@ -462,7 +468,8 @@ func (g *Graph) removeNodeProperty(node *Node, key string) {
 	}
 	nix := g.index.isNodePropertyIndexed(key)
 	if nix != nil {
-		nix.remove(value, node.id)
+		prop := fmt.Sprintf("%v", value)
+		nix.remove(prop, node.id)
 	}
 	delete(node.properties, key)
 }
@@ -470,7 +477,7 @@ func (g *Graph) removeNodeProperty(node *Node, key string) {
 func (g *Graph) detachRemoveNode(node *Node) {
 	g.detachNode(node)
 	g.allNodes.remove(node)
-	g.index.removeNodeFromIndex(node, g)
+	g.index.removeNodeFromIndex(node)
 }
 
 func (g *Graph) detachNode(node *Node) {
@@ -540,13 +547,15 @@ func (g *Graph) setEdgeProperty(edge *Edge, key string, value interface{}) {
 		oldValue, exists := edge.properties[key]
 		if exists {
 			if nix != nil {
-				nix.remove(oldValue, edge.id)
+				prop := fmt.Sprintf("%v", oldValue)
+				nix.remove(prop, edge.id)
 			}
 		}
 	}
 	edge.properties[key] = value
 	if nix != nil {
-		nix.add(value, edge.id, edge)
+		prop := fmt.Sprintf("%v", value)
+		nix.add(prop, edge.id, edge)
 	}
 }
 
@@ -560,7 +569,8 @@ func (g *Graph) removeEdgeProperty(edge *Edge, key string) {
 	}
 	nix := g.index.isEdgePropertyIndexed(key)
 	if nix != nil {
-		nix.remove(oldValue, edge.id)
+		prop := fmt.Sprintf("%v", oldValue)
+		nix.remove(prop, edge.id)
 	}
 	delete(edge.properties, key)
 }

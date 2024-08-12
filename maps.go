@@ -20,7 +20,6 @@ import (
 
 // An NodeMap stores nodes indexed by node labels
 type NodeMap struct {
-	// m[string]*fastSet
 	m        *linkedhashmap.Map
 	nolabels fastSet
 }
@@ -33,7 +32,8 @@ func NewNodeMap() *NodeMap {
 	return nm
 }
 
-func (nm *NodeMap) Replace(node *Node, oldLabels, newLabels StringSet) {
+func (nm *NodeMap) Replace(node *Node, oldLabels, newLabels *StringSet) {
+
 	if oldLabels.Len() == 0 {
 		if newLabels.Len() == 0 {
 			return
@@ -41,16 +41,16 @@ func (nm *NodeMap) Replace(node *Node, oldLabels, newLabels StringSet) {
 		nm.nolabels.remove(node.id)
 	}
 	if newLabels.Len() == 0 {
-		nm.nolabels.add(node.id, node)
+		nm.nolabels.add(node.id, node) // add to list of nodes with no Labels
 		return
 	}
 	var set *fastSet
 	// Process removed labels
-	for label := range oldLabels.M {
+	oldLabels.M.Iter(func(label string, _ bool) bool {
 		if !newLabels.Has(label) {
 			v, found := nm.m.Get(label)
 			if !found {
-				continue
+				return false
 			}
 			set = v.(*fastSet)
 			set.remove(node.id)
@@ -58,9 +58,11 @@ func (nm *NodeMap) Replace(node *Node, oldLabels, newLabels StringSet) {
 				nm.m.Remove(label)
 			}
 		}
-	}
+		return false
+	})
+
 	// Process added labels
-	for label := range newLabels.M {
+	newLabels.M.Iter(func(label string, _ bool) bool {
 		if !oldLabels.Has(label) {
 			v, found := nm.m.Get(label)
 			if !found {
@@ -71,7 +73,8 @@ func (nm *NodeMap) Replace(node *Node, oldLabels, newLabels StringSet) {
 			}
 			set.add(node.id, node)
 		}
-	}
+		return false
+	})
 }
 
 func (nm *NodeMap) Add(node *Node) {
@@ -81,7 +84,7 @@ func (nm *NodeMap) Add(node *Node) {
 	}
 
 	var set *fastSet
-	for label := range node.labels.M {
+	node.labels.M.Iter(func(label string, _ bool) bool {
 		v, found := nm.m.Get(label)
 		if !found {
 			set = newFastSet()
@@ -90,7 +93,8 @@ func (nm *NodeMap) Add(node *Node) {
 			set = v.(*fastSet)
 		}
 		set.add(node.id, node)
-	}
+		return false
+	})
 }
 
 func (nm NodeMap) Remove(node *Node) {
@@ -99,17 +103,18 @@ func (nm NodeMap) Remove(node *Node) {
 		return
 	}
 	var set *fastSet
-	for label := range node.labels.M {
+	node.labels.M.Iter(func(label string, _ bool) bool {
 		v, found := nm.m.Get(label)
 		if !found {
-			continue
+			return false
 		}
 		set = v.(*fastSet)
 		set.remove(node.id)
 		if set.size() == 0 {
 			nm.m.Remove(label)
 		}
-	}
+		return false
+	})
 }
 
 func (nm NodeMap) IsEmpty() bool {
@@ -181,18 +186,24 @@ func (nm NodeMap) Iterator() NodeIterator {
 	}
 }
 
-func (nm NodeMap) IteratorAllLabels(labels StringSet) NodeIterator {
+func (nm NodeMap) IteratorAllLabels(labels *StringSet) NodeIterator {
 	// Find the smallest map element, iterate that
 	var minSet *fastSet
-	for label := range labels.M {
+	fnd := true
+	labels.M.Iter(func(label string, _ bool) bool {
 		v, found := nm.m.Get(label)
 		if !found {
-			return nodeIterator{&emptyIterator{}}
+			fnd = false
+			return true
 		}
 		mp := v.(*fastSet)
 		if minSet == nil || minSet.size() > mp.size() {
 			minSet = mp
 		}
+		return false
+	})
+	if !fnd {
+		return nodeIterator{&emptyIterator{}}
 	}
 	itr := minSet.iterator()
 	flt := &filterIterator{

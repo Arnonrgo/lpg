@@ -16,42 +16,49 @@ package lpg
 
 import (
 	"container/list"
+	"github.com/kamstrup/intmap"
 )
 
 // A fastSet is a set of objects with constant-time
 // insertion/deletion, with iterator support
 type fastSet struct {
-	m map[int]*list.Element
+	n *intmap.Map[int, *list.Element]
+	//m map[int]*list.Element
 	l *list.List
 }
 
 func newFastSet() *fastSet {
 	return &fastSet{
-		m: make(map[int]*list.Element),
+		n: intmap.New[int, *list.Element](10),
+		//m: make(map[int]*list.Element),
 		l: list.New(),
 	}
 }
 
 func (f *fastSet) init() {
-	f.m = make(map[int]*list.Element)
+	//f.n =
+	//f.m = make(map[int]*list.Element)
 	f.l = list.New()
 }
 
-func (f fastSet) size() int { return len(f.m) }
+func (f fastSet) size() int {
+	return f.l.Len()
+	//return len(f.m)
+}
 
 // Add a new item. Returns true if added
 func (f *fastSet) add(id int, item interface{}) bool {
-	_, exists := f.m[id]
+	_, exists := f.n.Get(id)
 	if exists {
 		return false
 	}
 	el := f.l.PushBack(item)
-	f.m[id] = el
+	f.n.Put(id, el)
 	return true
 }
 
 func (f *fastSet) get(id int) (interface{}, bool) {
-	el, ok := f.m[id]
+	el, ok := f.n.Get(id)
 	if !ok {
 		return nil, false
 	}
@@ -60,18 +67,17 @@ func (f *fastSet) get(id int) (interface{}, bool) {
 
 // Remove an item. Returns true if removed
 func (f *fastSet) remove(id int) bool {
-	el := f.m[id]
-	if el == nil {
+	el, ext := f.n.Get(id)
+	if !ext {
 		return false
 	}
-	delete(f.m, id)
+	f.n.Del(id)
 	f.l.Remove(el)
 	return true
 }
 
 func (f fastSet) has(id int) bool {
-	_, exists := f.m[id]
-	return exists
+	return f.n.Has(id)
 }
 
 func (f fastSet) iterator() Iterator {

@@ -14,6 +14,8 @@
 
 package lpg
 
+import "fmt"
+
 type ErrNodeVariableExpected string
 
 func (e ErrNodeVariableExpected) Error() string {
@@ -39,7 +41,7 @@ type PatternSymbol struct {
 
 // A PatternItem can be a node or an edge element of a pattern
 type PatternItem struct {
-	Labels     StringSet
+	Labels     *StringSet
 	Properties map[string]interface{}
 	// Min=-1 and Max=-1 for variable length
 	Min int
@@ -113,16 +115,17 @@ func (p PatternItem) isConstrainedEdges(ctx *MatchContext) (*EdgeSet, error) {
 func (p *PatternItem) estimateNodeSize(g *Graph, symbols map[string]*PatternSymbol) (NodeIterator, int) {
 	max := -1
 	var ret NodeIterator
-	if p.Labels.Len() > 0 {
+	if p.Labels != nil && p.Labels.Len() > 0 {
 		itr := g.index.nodesByLabel.IteratorAllLabels(p.Labels)
 		if sz := itr.MaxSize(); sz != -1 {
 			max = sz
 			ret = itr
 		}
 	}
-	if len(p.Properties) > 0 {
+	if p.Properties != nil && len(p.Properties) > 0 {
 		for k, v := range p.Properties {
-			itr := g.index.GetIteratorForNodeProperty(k, v)
+			prop := fmt.Sprintf("%v", v)
+			itr := g.index.GetIteratorForNodeProperty(k, prop)
 			if itr == nil {
 				continue
 			}
@@ -174,16 +177,17 @@ func (p PatternItem) estimateEdgeSize(g *Graph, symbols map[string]*PatternSymbo
 		return g.GetEdges(), -1
 	}
 
-	if p.Labels.Len() > 0 {
+	if p.Labels != nil && p.Labels.Len() > 0 {
 		itr := g.GetEdgesWithAnyLabel(p.Labels)
 		if sz := itr.MaxSize(); sz != -1 {
 			max = sz
 			ret = itr
 		}
 	}
-	if len(p.Properties) > 0 {
+	if p.Properties != nil && len(p.Properties) > 0 {
 		for k, v := range p.Properties {
-			itr := g.index.GetIteratorForEdgeProperty(k, v)
+			prop := fmt.Sprintf("%v", v)
+			itr := g.index.GetIteratorForEdgeProperty(k, prop)
 			if itr == nil {
 				continue
 			}
@@ -370,7 +374,7 @@ func (pattern Pattern) getFastestElement(graph *Graph, symbols map[string]*Patte
 	return itr, index
 }
 
-func (pattern Pattern) GetSymbolNames() StringSet {
+func (pattern Pattern) GetSymbolNames() *StringSet {
 	ret := NewStringSet()
 	for _, p := range pattern {
 		if len(p.Name) > 0 {
