@@ -36,12 +36,12 @@ func newFastSet() *fastSet {
 }
 
 func (f *fastSet) init() {
-	//f.n =
+	f.n = intmap.New[int, *list.Element](10)
 	//f.m = make(map[int]*list.Element)
 	f.l = list.New()
 }
 
-func (f fastSet) size() int {
+func (f *fastSet) size() int {
 	return f.l.Len()
 	//return len(f.m)
 }
@@ -53,7 +53,7 @@ func (f *fastSet) add(id int, item interface{}) bool {
 		return false
 	}
 	el := f.l.PushBack(item)
-	f.n.Put(id, el)
+	f.n.PutIfNotExists(id, el)
 	return true
 }
 
@@ -76,11 +76,11 @@ func (f *fastSet) remove(id int) bool {
 	return true
 }
 
-func (f fastSet) has(id int) bool {
+func (f *fastSet) has(id int) bool {
 	return f.n.Has(id)
 }
 
-func (f fastSet) iterator() Iterator {
+func (f *fastSet) iterator() Iterator {
 	return &listIterator{next: f.l.Front(), size: f.size()}
 }
 
