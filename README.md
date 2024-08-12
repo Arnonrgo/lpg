@@ -1,4 +1,4 @@
-[![GoDoc](https://godoc.org/github.com/cloudprivacylabs/lpg?status.svg)](https://godoc.org/github.com/cloudprivacylabs/lpg/v2)
+[![GoDoc](https://godoc.org/github.com/Arnonrgo/lpg?status.svg)](https://godoc.org/github.com/Arnonrgo/lpg/v2)
 [![Go Report Card](https://goreportcard.com/badge/github.com/cloudprivacylabs/lpg)](https://goreportcard.com/report/github.com/cloudprivacylabs/lpg/v2)
 [![Build Status](https://github.com/cloudprivacylabs/lpg/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/cloudprivacylabs/lpg/actions/workflows/CI.yml)
 # Labeled property graphs
