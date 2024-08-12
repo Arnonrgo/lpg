@@ -1,4 +1,4 @@
-module github.com/cloudprivacylabs/lpg/v3
+module github.com/Arnonrgo/lpg/v3
 
 go 1.22
 
