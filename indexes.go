@@ -35,10 +35,8 @@ const (
 type graphIndex struct {
 	nodesByLabel NodeMap
 
-	nodeProperties    map[string]index[string, *Node]
-	nodeIntProperties map[string]index[int64, *Node]
-	edgeProperties    map[string]index[string, *Edge]
-	edgeIntProperties map[string]index[int64, *Edge]
+	nodeProperties map[string]index[string, *Node]
+	edgeProperties map[string]index[string, *Edge]
 }
 
 func newGraphIndex() graphIndex {

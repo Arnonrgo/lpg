@@ -44,6 +44,28 @@ func TestGraphCRUD(t *testing.T) {
 	}
 }
 
+func BenchmarkGetProperty(b *testing.B) {
+	g := NewGraph()
+	for i := 0; i < 1000; i++ {
+		is := fmt.Sprintf("%v", i)
+		node := g.NewNode([]string{"a", "b", "c", is}, map[string]interface{}{"a": "b", "c": "d"})
+		node.GetProperty("a")
+		node.GetProperty("blasah")
+
+	}
+	node := g.allNodes.head
+
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		node = node.next
+		if node == g.allNodes.tail {
+			node = g.allNodes.head
+		}
+		node.GetProperty("a")
+		node.GetProperty("blasah")
+	}
+}
+
 func BenchmarkAddNode(b *testing.B) {
 	g := NewGraph()
 	for n := 0; n < b.N; n++ {
