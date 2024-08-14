@@ -15,7 +15,6 @@
 package lpg
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 )
@@ -45,6 +44,9 @@ func (node *Node) GetGraph() *Graph { return node.graph }
 
 // GetLabels returns a copy of the node labels
 func (node *Node) GetLabels() *StringSet { return node.labels.Clone() }
+func (node *Node) GetNLabels(n int) *StringSet {
+	return node.labels.CloneN(n)
+}
 
 // HasLabel returns true if the node has the given label
 func (node *Node) HasLabel(s string) bool { return node.labels.Has(s) }
@@ -130,10 +132,6 @@ func (node *Node) String() string {
 		labels = ":" + labels
 	}
 	return fmt.Sprintf("(%s %s)", labels, node.properties)
-}
-
-func (node *Node) MarshalJSON() ([]byte, error) {
-	return json.Marshal(node.String())
 }
 
 // NextNodesWith returns the nodes reachable from source with the given label at one step

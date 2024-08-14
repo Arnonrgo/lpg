@@ -137,3 +137,23 @@ func BenchmarkFindEdgeProp(b *testing.B) {
 		}
 	}
 }
+
+func BenchmarkAddEdge(b *testing.B) {
+	g := NewGraph()
+	nodes := make([]*Node, 0)
+	for i := 0; i < 100_000; i++ {
+		nodes = append(nodes, g.NewNode([]string{fmt.Sprint(i)}, nil))
+	}
+	labels := []string{"a", "b", "c", "d", "e", "f", "g", "h", "i"}
+	b.ResetTimer()
+	g.AddEdgePropertyIndex("z", BtreeIndex)
+	for i := 0; i < len(nodes)-1; i++ {
+		for _, label := range labels {
+			if i < len(nodes)/2 {
+				g.FastNewEdge(nodes[i], nodes[i+1], label, map[string]interface{}{"a": "b", "c": "d", "e": "f", "g": "h", "z": "zz"})
+			} else {
+				g.FastNewEdge(nodes[i], nodes[i+1], label, nil)
+			}
+		}
+	}
+}

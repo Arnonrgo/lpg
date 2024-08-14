@@ -32,6 +32,16 @@ func NewStringSet(s ...string) *StringSet {
 	}
 	return &newSet
 }
+func (set *StringSet) CloneN(n int) *StringSet {
+	ret := swiss.NewMap[string, bool](uint32(n))
+	i := 0
+	set.M.Iter(func(x string, _ bool) bool {
+		ret.Put(x, true)
+		i++
+		return i == n
+	})
+	return &StringSet{M: ret}
+}
 
 func (set *StringSet) Clone() *StringSet {
 	newSet := NewStringSet()
@@ -133,7 +143,7 @@ func (set *StringSet) String() string {
 	return strings.Join(set.Slice(), ", ")
 }
 
-func (set StringSet) Len() int {
+func (set *StringSet) Len() int {
 
 	return set.M.Count()
 }
