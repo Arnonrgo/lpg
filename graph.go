@@ -414,6 +414,11 @@ func GetEdgeFilterFunc(labels *StringSet, properties map[string]interface{}) fun
 	}
 }
 
+func (g *Graph) setNodeContexts(node *Node, context *StringSet) {
+	g.index.nodesByContext.Replace(node, node.getContext(), context)
+	node.contexts = context.Clone()
+}
+
 func (g *Graph) setNodeLabels(node *Node, labels *StringSet) {
 	g.index.nodesByLabel.Replace(node, node.GetLabels(), labels)
 	node.labels = labels.Clone()

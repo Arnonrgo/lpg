@@ -35,6 +35,7 @@ const (
 type graphIndex struct {
 	nodesByLabel NodeMap
 
+	nodesByContext NodeMap
 	nodeProperties map[string]index[string, *Node]
 	edgeProperties map[string]index[string, *Edge]
 }

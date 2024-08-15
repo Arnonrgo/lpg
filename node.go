@@ -23,6 +23,7 @@ import (
 type Node struct {
 	next, prev *Node
 	labels     *StringSet
+	contexts   *StringSet
 	properties
 	graph    *Graph
 	incoming edgeMap
@@ -46,6 +47,24 @@ func (node *Node) GetGraph() *Graph { return node.graph }
 func (node *Node) GetLabels() *StringSet { return node.labels.Clone() }
 func (node *Node) GetNLabels(n int) *StringSet {
 	return node.labels.CloneN(n)
+}
+func (node *Node) getContext() *StringSet { return node.contexts.Clone() }
+
+func (node *Node) HasAnyLabel(labels ...string) bool {
+	return node.labels.HasAny(labels...)
+}
+func (node *Node) HasAllLabels(labels ...string) bool {
+	return node.labels.HasAll(labels...)
+}
+
+func (node *Node) HasAnyContext(contexts ...string) bool {
+	return node.contexts.HasAny(contexts...)
+}
+func (node *Node) HasAllContext(context ...string) bool {
+	return node.contexts.HasAll(context...)
+}
+func (node *Node) SetContexts(contexts *StringSet) {
+	node.graph.setNodeContexts(node, contexts)
 }
 
 // HasLabel returns true if the node has the given label

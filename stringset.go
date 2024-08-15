@@ -43,6 +43,12 @@ func (set *StringSet) CloneN(n int) *StringSet {
 	return &StringSet{M: ret}
 }
 
+func (set *StringSet) Iter(f func(string) bool) {
+	set.M.Iter(func(x string, _ bool) bool {
+		return f(x)
+	})
+}
+
 func (set *StringSet) Clone() *StringSet {
 	newSet := NewStringSet()
 	set.M.Iter(func(x string, _ bool) bool {
