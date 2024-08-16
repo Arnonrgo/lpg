@@ -28,7 +28,7 @@ func BenchmarkClone(b *testing.B) {
 		nodes = append(nodes, source.NewNode([]string{"a"}, nil))
 	}
 	for i := 0; i < 9; i++ {
-		source.NewEdge(nodes[i], nodes[i+1], "label", nil)
+		source.NewEdge(nodes[i], nodes[i+1], "label", nil, nil)
 	}
 
 	for n := 0; n < b.N; n++ {
@@ -46,7 +46,7 @@ func TestClone(t *testing.T) {
 		nodes = append(nodes, source.NewNode([]string{"a"}, map[string]interface{}{"key": i}))
 	}
 	for i := 0; i < 9; i++ {
-		source.NewEdge(nodes[i], nodes[i+1], "label", map[string]interface{}{"key": i})
+		source.NewEdge(nodes[i], nodes[i+1], "label", map[string]interface{}{"key": i}, nil)
 	}
 
 	CopyGraph(source, target, func(key string, value interface{}) interface{} {

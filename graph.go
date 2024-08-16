@@ -14,7 +14,10 @@
 
 package lpg
 
-import "fmt"
+import (
+	"fmt"
+	"github.com/kamstrup/intmap"
+)
 
 // A Graph is a labeled property graph containing nodes, and directed
 // edges combining those nodes.
@@ -76,7 +79,7 @@ func (g *Graph) FastNewNode(labels *StringSet, props map[string]interface{}) *No
 
 // NewEdge creates a new edge between the two nodes of the graph. Both
 // nodes must be nodes of this graph, otherwise this call panics
-func (g *Graph) NewEdge(from, to *Node, label string, props map[string]any) *Edge {
+func (g *Graph) NewEdge(from, to *Node, label string, props map[string]any, contexts *StringSet) *Edge {
 	var p properties
 	if len(props) > 0 {
 		p = make(properties, len(props))
@@ -84,14 +87,17 @@ func (g *Graph) NewEdge(from, to *Node, label string, props map[string]any) *Edg
 			p[k] = v
 		}
 	}
-	return g.FastNewEdge(from, to, label, p)
+	if contexts != nil {
+		contexts = contexts.Clone()
+	}
+	return g.FastNewEdge(from, to, label, p, contexts)
 }
 
 // FastNewEdge creates a new edge between the two nodes of the
 // graph. Both nodes must be nodes of this graph, otherwise this call
 // panics. This version uses the given properties map directly without
 // copying it.
-func (g *Graph) FastNewEdge(from, to *Node, label string, props map[string]any) *Edge {
+func (g *Graph) FastNewEdge(from, to *Node, label string, props map[string]any, contexts *StringSet) *Edge {
 	if from.graph != g {
 		panic("from node is not in graph")
 	}
@@ -103,12 +109,16 @@ func (g *Graph) FastNewEdge(from, to *Node, label string, props map[string]any) 
 		to:         to,
 		label:      label,
 		id:         g.idBase,
+		contexts:   contexts,
 		properties: properties(props),
+	}
+	if contexts == nil {
+		newEdge.contexts = NewStringSet()
 	}
 	g.idBase++
 	g.allEdges.add(newEdge, 0)
 	g.connect(newEdge)
-	g.index.addEdgeToIndex(newEdge, g)
+	g.index.addEdgeToIndex(newEdge)
 	return newEdge
 }
 
@@ -212,6 +222,25 @@ func (g *Graph) GetEdgesWithProperty(property string) EdgeIterator {
 			return exists
 		},
 	}}
+
+}
+func (g *Graph) ProcessEdgesWithAnyContext(contexts *StringSet, handler func(*Edge)) {
+	seen := intmap.NewSet[int](10)
+	contexts.Iter(func(context string) bool {
+		itr := g.index.edgesByContext.find(context)
+		if itr == nil {
+			return false
+		}
+		edges := edgeIterator{itr}
+		for edges.Iterator.Next() {
+			edge := edges.Edge()
+			if ok := seen.Has(edge.id); !ok {
+				seen.Add(edge.id)
+				handler(edge)
+			}
+		}
+		return false
+	})
 
 }
 
@@ -415,8 +444,11 @@ func GetEdgeFilterFunc(labels *StringSet, properties map[string]interface{}) fun
 }
 
 func (g *Graph) setNodeContexts(node *Node, context *StringSet) {
-	g.index.nodesByContext.Replace(node, node.getContext(), context)
-	node.contexts = context.Clone()
+	node.contexts.Replace(context, func(s string) {
+		g.index.nodesByContext.remove(s, node.id)
+	}, func(s string) {
+		g.index.nodesByContext.add(s, node.id, node)
+	})
 }
 
 func (g *Graph) setNodeLabels(node *Node, labels *StringSet) {
@@ -489,13 +521,13 @@ func (g *Graph) detachNode(node *Node) {
 	for _, edge := range EdgeSlice(node.incoming.iterator(2)) {
 		g.disconnect(edge)
 		g.allEdges.remove(edge, 0)
-		g.index.removeEdgeFromIndex(edge, g)
+		g.index.removeEdgeFromIndex(edge)
 	}
 	node.incoming = edgeMap{}
 	for _, edge := range EdgeSlice(node.outgoing.iterator(1)) {
 		g.disconnect(edge)
 		g.allEdges.remove(edge, 0)
-		g.index.removeEdgeFromIndex(edge, g)
+		g.index.removeEdgeFromIndex(edge)
 	}
 	node.outgoing = edgeMap{}
 }
@@ -508,10 +540,11 @@ func (g *Graph) cloneEdge(from, to *Node, sourceEdge *Edge, cloneProperty func(s
 		panic("to node is not in graph")
 	}
 	newEdge := &Edge{
-		from:  from,
-		to:    to,
-		label: sourceEdge.label,
-		id:    g.idBase,
+		from:     from,
+		to:       to,
+		label:    sourceEdge.label,
+		contexts: sourceEdge.contexts.Clone(),
+		id:       g.idBase,
 	}
 	if sourceEdge.properties != nil {
 		newEdge.properties = sourceEdge.properties.clone(to.graph, g, cloneProperty)
@@ -519,7 +552,7 @@ func (g *Graph) cloneEdge(from, to *Node, sourceEdge *Edge, cloneProperty func(s
 	g.idBase++
 	g.allEdges.add(newEdge, 0)
 	g.connect(newEdge)
-	g.index.addEdgeToIndex(newEdge, g)
+	g.index.addEdgeToIndex(newEdge)
 	return newEdge
 }
 
@@ -537,6 +570,14 @@ func (g *Graph) setEdgeLabel(edge *Edge, label string) {
 	g.disconnect(edge)
 	edge.label = label
 	g.connect(edge)
+}
+
+func (g *Graph) setEdgeContext(edge *Edge, context *StringSet) {
+	edge.contexts.Replace(context, func(s string) {
+		g.index.edgesByContext.remove(s, edge.id)
+	}, func(s string) {
+		g.index.edgesByContext.add(s, edge.id, edge)
+	})
 }
 
 func (g *Graph) removeEdge(edge *Edge) {

@@ -153,3 +153,21 @@ func (set *StringSet) Len() int {
 
 	return set.M.Count()
 }
+
+func (set *StringSet) Replace(other *StringSet, handleRemoved, handleAdded func(string)) {
+	set.M.Iter(func(x string, _ bool) bool {
+		if !other.M.Has(x) {
+			handleRemoved(x)
+		}
+		return false
+	})
+	newSet := swiss.NewMap[string, bool](uint32(other.M.Count()))
+	other.M.Iter(func(x string, _ bool) bool {
+		if !set.M.Has(x) {
+			handleAdded(x)
+		}
+		newSet.Put(x, true)
+		return false
+	})
+	set.M = newSet
+}

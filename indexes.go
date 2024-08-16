@@ -33,9 +33,9 @@ const (
 )
 
 type graphIndex struct {
-	nodesByLabel NodeMap
-
-	nodesByContext NodeMap
+	nodesByLabel   NodeMap
+	nodesByContext index[string, *Node]
+	edgesByContext index[string, *Edge]
 	nodeProperties map[string]index[string, *Node]
 	edgeProperties map[string]index[string, *Edge]
 }
@@ -43,6 +43,8 @@ type graphIndex struct {
 func newGraphIndex() graphIndex {
 	return graphIndex{
 		nodesByLabel:   *NewNodeMap(),
+		nodesByContext: &setTree[string, *Node]{},
+		edgesByContext: &setTree[string, *Edge]{},
 		nodeProperties: make(map[string]index[string, *Node]),
 		edgeProperties: make(map[string]index[string, *Edge]),
 	}
@@ -129,6 +131,11 @@ func (g *graphIndex) addNodeToIndex(node *Node) {
 func (g *graphIndex) removeNodeFromIndex(node *Node) {
 	g.nodesByLabel.Remove(node)
 
+	node.contexts.Iter(func(k string) bool {
+		g.nodesByContext.remove(k, node.id)
+		return false
+	})
+
 	for k, v := range node.properties {
 		index, found := g.nodeProperties[k]
 		if !found {
@@ -163,7 +170,11 @@ func (g *graphIndex) EdgePropertyIndex(propertyName string, graph *Graph, it Ind
 	}
 }
 
-func (g *graphIndex) addEdgeToIndex(edge *Edge, graph *Graph) {
+func (g *graphIndex) addEdgeToIndex(edge *Edge) {
+	edge.contexts.Iter(func(k string) bool {
+		g.edgesByContext.add(k, edge.id, edge)
+		return false
+	})
 	for k, v := range edge.properties {
 		index, found := g.edgeProperties[k]
 		if !found {
@@ -174,7 +185,12 @@ func (g *graphIndex) addEdgeToIndex(edge *Edge, graph *Graph) {
 	}
 }
 
-func (g *graphIndex) removeEdgeFromIndex(edge *Edge, graph *Graph) {
+func (g *graphIndex) removeEdgeFromIndex(edge *Edge) {
+	edge.contexts.Iter(func(k string) bool {
+		g.edgesByContext.remove(k, edge.id)
+		return false
+	})
+
 	for k, v := range edge.properties {
 		index, found := g.edgeProperties[k]
 		if !found {

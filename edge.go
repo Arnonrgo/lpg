@@ -22,6 +22,7 @@ import (
 type Edge struct {
 	from, to *Node
 	label    string
+	contexts *StringSet
 	properties
 	id int
 	// 0: all edges list
@@ -91,4 +92,15 @@ func (edge *Edge) Remove() {
 // Returns the string representation of an edge
 func (edge *Edge) String() string {
 	return fmt.Sprintf("[:%s %s]", edge.label, edge.properties)
+}
+func (edge *Edge) getContext() *StringSet { return edge.contexts.Clone() }
+
+func (edge *Edge) HasAnyContext(contexts ...string) bool {
+	return edge.contexts.HasAny(contexts...)
+}
+func (edge *Edge) HasAllContext(context ...string) bool {
+	return edge.contexts.HasAll(context...)
+}
+func (edge *Edge) SetContexts(contexts *StringSet) {
+	edge.from.graph.setEdgeContext(edge, contexts)
 }

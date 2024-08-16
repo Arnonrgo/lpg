@@ -48,7 +48,6 @@ func (node *Node) GetLabels() *StringSet { return node.labels.Clone() }
 func (node *Node) GetNLabels(n int) *StringSet {
 	return node.labels.CloneN(n)
 }
-func (node *Node) getContext() *StringSet { return node.contexts.Clone() }
 
 func (node *Node) HasAnyLabel(labels ...string) bool {
 	return node.labels.HasAny(labels...)
@@ -56,6 +55,7 @@ func (node *Node) HasAnyLabel(labels ...string) bool {
 func (node *Node) HasAllLabels(labels ...string) bool {
 	return node.labels.HasAll(labels...)
 }
+func (node *Node) getContext() *StringSet { return node.contexts.Clone() }
 
 func (node *Node) HasAnyContext(contexts ...string) bool {
 	return node.contexts.HasAny(contexts...)

@@ -27,7 +27,7 @@ func BenchmarkPropNonExistsGraph(b *testing.B) {
 	}
 	labels := []string{"a", "b", "c", "d"}
 	for i := 0; i < len(nodes)-1; i++ {
-		g.NewEdge(nodes[i], nodes[i+1], labels[i%4], nil)
+		g.NewEdge(nodes[i], nodes[i+1], labels[i%4], nil, nil)
 	}
 	for n := 0; n < b.N; n++ {
 		for nodes := g.GetNodes(); nodes.Next(); {
@@ -48,7 +48,7 @@ func BenchmarkPropExistsGraph(b *testing.B) {
 	}
 	labels := []string{"a", "b", "c", "d"}
 	for i := 0; i < len(nodes)-1; i++ {
-		g.NewEdge(nodes[i], nodes[i+1], labels[i%4], nil)
+		g.NewEdge(nodes[i], nodes[i+1], labels[i%4], nil, nil)
 	}
 	for n := 0; n < b.N; n++ {
 		for nodes := g.GetNodes(); nodes.Next(); {
@@ -66,7 +66,7 @@ func BenchmarkDeleteEdge(b *testing.B) {
 	labels := []string{"a", "b", "c", "d"}
 	for i := 0; i < len(nodes)-1; i++ {
 		for _, label := range labels {
-			g.NewEdge(nodes[i], nodes[i+1], label, nil)
+			g.NewEdge(nodes[i], nodes[i+1], label, nil, nil)
 		}
 	}
 	for n := 0; n < b.N; n++ {
@@ -96,7 +96,7 @@ func BenchmarkFindEdgeLabel(b *testing.B) {
 	labels := []string{"a", "b", "c", "d", "e", "f", "g", "h", "i"}
 	for i := 0; i < len(nodes)-1; i++ {
 		for _, label := range labels {
-			g.NewEdge(nodes[i], nodes[i+1], label, nil)
+			g.NewEdge(nodes[i], nodes[i+1], label, nil, nil)
 		}
 	}
 	edgeHasLabel := func(edge *Edge, str string) bool {
@@ -122,9 +122,9 @@ func BenchmarkFindEdgeProp(b *testing.B) {
 	for i := 0; i < len(nodes)-1; i++ {
 		for _, label := range labels {
 			if i < len(nodes)/2 {
-				g.NewEdge(nodes[i], nodes[i+1], label, map[string]interface{}{"a": "b", "c": "d", "e": "f", "g": "h", "z": "zz"})
+				g.NewEdge(nodes[i], nodes[i+1], label, map[string]interface{}{"a": "b", "c": "d", "e": "f", "g": "h", "z": "zz"}, nil)
 			} else {
-				g.NewEdge(nodes[i], nodes[i+1], label, nil)
+				g.NewEdge(nodes[i], nodes[i+1], label, nil, nil)
 			}
 		}
 	}
@@ -150,9 +150,9 @@ func BenchmarkAddEdge(b *testing.B) {
 	for i := 0; i < len(nodes)-1; i++ {
 		for _, label := range labels {
 			if i < len(nodes)/2 {
-				g.FastNewEdge(nodes[i], nodes[i+1], label, map[string]interface{}{"a": "b", "c": "d", "e": "f", "g": "h", "z": "zz"})
+				g.FastNewEdge(nodes[i], nodes[i+1], label, map[string]interface{}{"a": "b", "c": "d", "e": "f", "g": "h", "z": "zz"}, nil)
 			} else {
-				g.FastNewEdge(nodes[i], nodes[i+1], label, nil)
+				g.FastNewEdge(nodes[i], nodes[i+1], label, nil, nil)
 			}
 		}
 	}

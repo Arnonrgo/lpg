@@ -26,7 +26,7 @@ func TestPattern(t *testing.T) {
 		nodes = append(nodes, graph.NewNode([]string{"a"}, nil))
 	}
 	for i := 0; i < 9; i++ {
-		graph.NewEdge(nodes[i], nodes[i+1], "label", nil)
+		graph.NewEdge(nodes[i], nodes[i+1], "label", nil, nil)
 	}
 	nodes[5].SetProperty("key", "value")
 	symbols := make(map[string]*PatternSymbol)
@@ -196,9 +196,9 @@ func TestOCGetPattern(t *testing.T) {
 	n3 := g.NewNode([]string{"c2"}, nil)
 	n4 := g.NewNode([]string{"c3"}, nil)
 
-	g.NewEdge(n1, n2, "n1n2", nil)
-	g.NewEdge(n1, n3, "n1n3", nil)
-	g.NewEdge(n3, n4, "n3n4", nil)
+	g.NewEdge(n1, n2, "n1n2", nil, nil)
+	g.NewEdge(n1, n3, "n1n3", nil, nil)
+	g.NewEdge(n3, n4, "n3n4", nil, nil)
 	pat := Pattern{
 		{Name: "this", Labels: NewStringSet("c1"), Properties: map[string]interface{}{}},
 		{Min: 1, Max: 1, ToLeft: true},
@@ -224,9 +224,9 @@ func TestOCGetPattern2(t *testing.T) {
 	n3 := g.NewNode([]string{"c2"}, nil)
 	n4 := g.NewNode([]string{"c3"}, nil)
 
-	g.NewEdge(n1, n2, "n1n2", nil)
-	g.NewEdge(n1, n3, "n1n3", nil)
-	g.NewEdge(n3, n4, "n3n4", nil)
+	g.NewEdge(n1, n2, "n1n2", nil, nil)
+	g.NewEdge(n1, n3, "n1n3", nil, nil)
+	g.NewEdge(n3, n4, "n3n4", nil, nil)
 	pat := Pattern{
 		{Name: "this", Labels: NewStringSet("c1"), Properties: map[string]interface{}{}},
 		{Min: 1, Max: 1, ToLeft: true},
@@ -255,7 +255,7 @@ func TestLoopPattern(t *testing.T) {
 		nodes = append(nodes, graph.NewNode([]string{"a"}, nil))
 	}
 	for i := 0; i < 9; i++ {
-		graph.NewEdge(nodes[i], nodes[i+1], "label", nil)
+		graph.NewEdge(nodes[i], nodes[i+1], "label", nil, nil)
 	}
 	symbols := make(map[string]*PatternSymbol)
 	symbols["n"] = &PatternSymbol{}
@@ -276,7 +276,7 @@ func TestLoopPattern(t *testing.T) {
 	}
 
 	// Create a loop
-	graph.NewEdge(nodes[0], nodes[0], "label", nil)
+	graph.NewEdge(nodes[0], nodes[0], "label", nil, nil)
 	out = DefaultMatchAccumulator{}
 	err = pat.Run(graph, symbols, &out)
 	if err != nil {
@@ -296,7 +296,7 @@ func TestVariableLengthPath(t *testing.T) {
 		nodes = append(nodes, graph.NewNode([]string{"a"}, nil))
 	}
 	for i := 0; i < 9; i++ {
-		graph.NewEdge(nodes[i], nodes[i+1], "label", nil)
+		graph.NewEdge(nodes[i], nodes[i+1], "label", nil, nil)
 	}
 
 	nodes[1].SetProperty("property", "value")
@@ -344,7 +344,7 @@ func GetLineGraph(n int, withIndex bool) (*Graph, []*Node) {
 		nodes = append(nodes, graph.NewNode([]string{"a"}, nil))
 	}
 	for i := 0; i < n-1; i++ {
-		graph.NewEdge(nodes[i], nodes[i+1], "label", nil)
+		graph.NewEdge(nodes[i], nodes[i+1], "label", nil, nil)
 	}
 	return graph, nodes
 }
@@ -360,10 +360,10 @@ func GetLineGraphWithSelfLoops(n int, withIndex bool) (*Graph, []*Node) {
 		nodes = append(nodes, graph.NewNode([]string{"a"}, nil))
 	}
 	for i := 0; i < n-1; i++ {
-		graph.NewEdge(nodes[i], nodes[i+1], "label", nil)
-		graph.NewEdge(nodes[i], nodes[i], "label", nil)
+		graph.NewEdge(nodes[i], nodes[i+1], "label", nil, nil)
+		graph.NewEdge(nodes[i], nodes[i], "label", nil, nil)
 	}
-	graph.NewEdge(nodes[n-1], nodes[n-1], "label", nil)
+	graph.NewEdge(nodes[n-1], nodes[n-1], "label", nil, nil)
 	return graph, nodes
 }
 
@@ -378,9 +378,9 @@ func GetCircleGraph(n int, withIndex bool) (*Graph, []*Node) {
 		nodes = append(nodes, graph.NewNode([]string{"a"}, nil))
 	}
 	for i := 0; i < n-1; i++ {
-		graph.NewEdge(nodes[i], nodes[i+1], "label", nil)
+		graph.NewEdge(nodes[i], nodes[i+1], "label", nil, nil)
 	}
-	graph.NewEdge(nodes[n-1], nodes[0], "label", nil)
+	graph.NewEdge(nodes[n-1], nodes[0], "label", nil, nil)
 	return graph, nodes
 }
 

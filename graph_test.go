@@ -16,6 +16,7 @@ package lpg
 
 import (
 	"fmt"
+	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
@@ -26,7 +27,7 @@ func TestGraphCRUD(t *testing.T) {
 		nodes = append(nodes, g.NewNode([]string{fmt.Sprint(i)}, nil))
 	}
 	for i := 0; i < len(nodes)-1; i++ {
-		g.NewEdge(nodes[i], nodes[i+1], "e", nil)
+		g.NewEdge(nodes[i], nodes[i+1], "e", nil, nil)
 	}
 
 	if len(NodeSlice(g.GetNodes())) != len(nodes) {
@@ -42,6 +43,38 @@ func TestGraphCRUD(t *testing.T) {
 	if g.NumNodes() != len(nodes)-1 {
 		t.Errorf("Wrong numNodes")
 	}
+}
+
+func TestContexts(t *testing.T) {
+	nodes := make([]*Node, 0)
+	g := NewGraph()
+
+	for i := 0; i < 10; i++ {
+		nodes = append(nodes, g.NewNode([]string{fmt.Sprint(i)}, nil))
+	}
+	for i := 0; i < len(nodes)-2; i++ {
+		g.NewEdge(nodes[i], nodes[i+1], "e", nil, NewStringSet("default", "whatever"))
+	}
+	i := len(nodes) - 2
+	g.NewEdge(nodes[i], nodes[i+1], "e", nil, NewStringSet("something", "whatever"))
+
+	edges := make([]*Edge, 0)
+	g.ProcessEdgesWithAnyContext(NewStringSet("something"), func(e *Edge) {
+		edges = append(edges, e)
+	})
+	assert.Equal(t, 1, len(edges))
+	edges = make([]*Edge, 0)
+	g.ProcessEdgesWithAnyContext(NewStringSet("default", "whatever"), func(e *Edge) {
+		edges = append(edges, e)
+	})
+	assert.Equal(t, len(nodes)-1, len(edges))
+	edges = make([]*Edge, 0)
+	g.ProcessEdgesWithAnyContext(NewStringSet("default"), func(e *Edge) {
+		edges = append(edges, e)
+
+	})
+	assert.Equal(t, len(nodes)-2, len(edges))
+
 }
 
 func BenchmarkGetProperty(b *testing.B) {
@@ -117,7 +150,7 @@ func BenchmarkCreateEdge(b *testing.B) {
 
 	for n := 0; n < b.N; n++ {
 		for i := 0; i < len(nodes)-1; i++ {
-			g.NewEdge(nodes[i], nodes[i+1], labels[i%4], nil)
+			g.NewEdge(nodes[i], nodes[i+1], labels[i%4], nil, nil)
 		}
 	}
 }
@@ -130,7 +163,7 @@ func BenchmarkItrAllEdge(b *testing.B) {
 	}
 	labels := []string{"a", "b", "c", "d"}
 	for i := 0; i < len(nodes)-1; i++ {
-		g.NewEdge(nodes[i], nodes[i+1], labels[i%4], nil)
+		g.NewEdge(nodes[i], nodes[i+1], labels[i%4], nil, nil)
 	}
 	var edge *Edge
 
@@ -151,7 +184,7 @@ func BenchmarkItrNodeEdges(b *testing.B) {
 	labels := []string{"a", "b", "c", "d"}
 	for i := 0; i < len(nodes)-1; i++ {
 		for _, label := range labels {
-			g.NewEdge(nodes[i], nodes[i+1], label, nil)
+			g.NewEdge(nodes[i], nodes[i+1], label, nil, nil)
 		}
 	}
 	var edge *Edge
