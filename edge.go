@@ -98,9 +98,12 @@ func (edge *Edge) getContext() *StringSet { return edge.contexts.Clone() }
 func (edge *Edge) HasAnyContext(contexts ...string) bool {
 	return edge.contexts.HasAny(contexts...)
 }
-func (edge *Edge) HasAllContext(context ...string) bool {
+func (edge *Edge) HasAllContexts(context ...string) bool {
 	return edge.contexts.HasAll(context...)
 }
 func (edge *Edge) SetContexts(contexts *StringSet) {
 	edge.from.graph.setEdgeContext(edge, contexts)
+}
+func (edge *Edge) GetContexts() *StringSet {
+	return edge.getContext().Clone()
 }
