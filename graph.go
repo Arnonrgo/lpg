@@ -224,6 +224,27 @@ func (g *Graph) GetEdgesWithProperty(property string) EdgeIterator {
 	}}
 
 }
+
+func (g *Graph) ProcessNodeWithAnyContext(contexts *StringSet, handler func(*Node)) {
+	seen := intmap.NewSet[int](10)
+	contexts.Iter(func(context string) bool {
+		itr := g.index.nodesByContext.find(context)
+		if itr == nil {
+			return false
+		}
+		nodes := nodeIterator{itr}
+		for nodes.Iterator.Next() {
+			node := nodes.Node()
+			if ok := seen.Has(node.id); !ok {
+				seen.Add(node.id)
+				handler(node)
+			}
+		}
+		return false
+	})
+
+}
+
 func (g *Graph) ProcessEdgesWithAnyContext(contexts *StringSet, handler func(*Edge)) {
 	seen := intmap.NewSet[int](10)
 	contexts.Iter(func(context string) bool {
