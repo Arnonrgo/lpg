@@ -77,6 +77,31 @@ func TestContexts(t *testing.T) {
 
 }
 
+func TestRetrieveEdgesWithContexts(t *testing.T) {
+	nodes := make([]*Node, 0)
+	g := NewGraph()
+
+	for i := 0; i < 10; i++ {
+		nodes = append(nodes, g.NewNode([]string{fmt.Sprint(i)}, nil))
+	}
+	for i := 0; i < len(nodes)-2; i++ {
+		g.NewEdge(nodes[i], nodes[i+1], "edge", nil, NewStringSet("default", "whatever"))
+	}
+	for i := 0; i < len(nodes)-2; i++ {
+		g.NewEdge(nodes[i], nodes[i+1], "other", nil, nil)
+	}
+	edges := g.GetEdgesWithAnyLabel(NewStringSet("other"))
+	for edges.Next() {
+		fmt.Println("here")
+		assert.Equal(t, "other", edges.Edge().GetLabel())
+	}
+	edges = g.GetEdgesWithAnyLabel(NewStringSet("edge"))
+	for edges.Next() {
+		fmt.Println("edge")
+		assert.Equal(t, "edg", edges.Edge().GetLabel())
+	}
+}
+
 func BenchmarkGetProperty(b *testing.B) {
 	g := NewGraph()
 	for i := 0; i < 1000; i++ {

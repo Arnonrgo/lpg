@@ -146,7 +146,7 @@ func (set *StringSet) SortedSlice() []string {
 }
 
 func (set *StringSet) String() string {
-	return strings.Join(set.Slice(), ", ")
+	return strings.Join(set.Slice(), ",")
 }
 
 func (set *StringSet) Len() int {
