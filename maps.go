@@ -186,6 +186,24 @@ func (nm NodeMap) Iterator() NodeIterator {
 	}
 }
 
+func (nm NodeMap) GeyByTwoLables(first, second string) *Node {
+	v, found := nm.m.Get(first)
+	if !found {
+		v, found = nm.m.Get(second)
+	}
+	if !found {
+		return nil
+	}
+	set := v.(*fastSet)
+	for e := set.l.Front(); e != nil; e = e.Next() {
+		node := e.Value.(*Node)
+		if node.labels.Has(second) {
+			return node
+		}
+	}
+	return nil
+}
+
 func (nm NodeMap) IteratorAllLabels(labels *StringSet) NodeIterator {
 	// Find the smallest map element, iterate that
 	var minSet *fastSet
