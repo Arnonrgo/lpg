@@ -149,6 +149,10 @@ func (g *Graph) GetNodesWithAllLabels(labels *StringSet) NodeIterator {
 	return g.index.nodesByLabel.IteratorAllLabels(labels)
 }
 
+func (g *Graph) GetFirstNodeByLabel(label string) *Node {
+	return g.index.nodesByLabel.GetFirst(label)
+}
+
 // GetEdges returns an edge iterator that goes through all the edges
 // of the graph. The behavior of the returned iterator is undefined if
 // during iteration edges are updated, new edges are added, or

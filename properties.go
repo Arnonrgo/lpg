@@ -16,7 +16,7 @@ package lpg
 
 import (
 	"fmt"
-	"github.com/dolthub/swiss"
+	"github.com/cockroachdb/swiss"
 	"strings"
 )
 
@@ -27,7 +27,7 @@ type props struct {
 
 func newPropFromMap(m map[string]interface{}) *props {
 	p := props{
-		values: swiss.NewMap[string, any](uint32(len(m))),
+		values: swiss.New[string, any](len(m)),
 	}
 	for k, v := range m {
 		p.values.Put(k, v)
@@ -37,7 +37,7 @@ func newPropFromMap(m map[string]interface{}) *props {
 
 func newProps() *props {
 	return &props{
-		values: swiss.NewMap[string, any](10),
+		values: swiss.New[string, any](10),
 	}
 }
 func (p *props) getProp(key string) (interface{}, bool) {
@@ -46,7 +46,7 @@ func (p *props) getProp(key string) (interface{}, bool) {
 
 func (p *props) forEachProp(f func(string, interface{}) bool) bool {
 	result := true
-	p.values.Iter(
+	p.values.All(
 		func(key string, value any) bool {
 			if !f(key, value) {
 				result = false
@@ -58,8 +58,8 @@ func (p *props) forEachProp(f func(string, interface{}) bool) bool {
 }
 
 func (p props) String() string {
-	elements := make([]string, 0, p.values.Count())
-	p.values.Iter(func(k string, v any) bool {
+	elements := make([]string, 0, p.values.Len())
+	p.values.All(func(k string, v any) bool {
 		if _, node := v.(*Node); node {
 			return false
 		}
@@ -74,8 +74,8 @@ func (p props) String() string {
 
 // lookup proprs from source. allocate to target
 func (p *props) clone(sourceGraph, targetGraph *Graph, cloneProperty func(string, interface{}) interface{}) *props {
-	clone := swiss.NewMap[string, any](uint32(p.values.Count()))
-	p.values.Iter(func(k string, v any) bool {
+	clone := swiss.New[string, any](p.values.Len())
+	p.values.All(func(k string, v any) bool {
 		clone.Put(k, cloneProperty(k, v))
 		return false
 	})

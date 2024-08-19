@@ -14,6 +14,8 @@
 
 package lpg
 
+import "github.com/tidwall/btree"
+
 type Item interface {
 	any
 }
@@ -34,8 +36,9 @@ const (
 
 type graphIndex struct {
 	nodesByLabel   NodeMap
+	nodeIndex      *btree.Map[string, *Node]
 	nodesByContext index[string, *Node]
-	edgesByContext index[string, *Edge]
+	edgesByContext *setTree[string, *Edge]
 	nodeProperties map[string]index[string, *Node]
 	edgeProperties map[string]index[string, *Edge]
 }
@@ -43,6 +46,7 @@ type graphIndex struct {
 func newGraphIndex() graphIndex {
 	return graphIndex{
 		nodesByLabel:   *NewNodeMap(),
+		nodeIndex:      btree.NewMap[string, *Node](10),
 		nodesByContext: &setTree[string, *Node]{},
 		edgesByContext: &setTree[string, *Edge]{},
 		nodeProperties: make(map[string]index[string, *Node]),
@@ -117,7 +121,6 @@ func (g *graphIndex) EdgesWithProperty(key string) EdgeIterator {
 
 func (g *graphIndex) addNodeToIndex(node *Node) {
 	g.nodesByLabel.Add(node)
-
 	for k, v := range node.properties {
 		index, found := g.nodeProperties[k]
 		if !found {

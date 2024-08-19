@@ -15,7 +15,7 @@
 package lpg
 
 import (
-	"github.com/dolthub/swiss"
+	"github.com/cockroachdb/swiss"
 	"sort"
 	"strings"
 )
@@ -25,7 +25,7 @@ type StringSet struct {
 }
 
 func NewStringSet(s ...string) *StringSet {
-	ret := swiss.NewMap[string, bool](uint32(len(s)))
+	ret := swiss.New[string, bool](len(s))
 	newSet := StringSet{M: ret}
 	for _, x := range s {
 		newSet.M.Put(x, true)
@@ -33,9 +33,9 @@ func NewStringSet(s ...string) *StringSet {
 	return &newSet
 }
 func (set *StringSet) CloneN(n int) *StringSet {
-	ret := swiss.NewMap[string, bool](uint32(n))
+	ret := swiss.New[string, bool](n)
 	i := 0
-	set.M.Iter(func(x string, _ bool) bool {
+	set.M.All(func(x string, _ bool) bool {
 		ret.Put(x, true)
 		i++
 		return i == n
@@ -44,14 +44,14 @@ func (set *StringSet) CloneN(n int) *StringSet {
 }
 
 func (set *StringSet) Iter(f func(string) bool) {
-	set.M.Iter(func(x string, _ bool) bool {
+	set.M.All(func(x string, _ bool) bool {
 		return f(x)
 	})
 }
 
 func (set *StringSet) Clone() *StringSet {
 	newSet := NewStringSet()
-	set.M.Iter(func(x string, _ bool) bool {
+	set.M.All(func(x string, _ bool) bool {
 		newSet.M.Put(x, true)
 		return false
 	})
@@ -59,16 +59,18 @@ func (set *StringSet) Clone() *StringSet {
 }
 
 func (set *StringSet) IsEqual(s *StringSet) bool {
-	return set.M.Count() == s.M.Count() && set.HasAllSet(s)
+	return set.M.Len() == s.M.Len() && set.HasAllSet(s)
 }
 
 func (set *StringSet) Has(s string) bool {
-	return set.M.Has(s)
+	_, ret := set.M.Get(s)
+	return ret
 }
 
 func (set *StringSet) HasAny(s ...string) bool {
 	for _, x := range s {
-		if set.M.Has(x) {
+		_, has := set.M.Get(x)
+		if has {
 			return true
 		}
 	}
@@ -77,8 +79,9 @@ func (set *StringSet) HasAny(s ...string) bool {
 
 func (set *StringSet) HasAnySet(s StringSet) bool {
 	res := false
-	s.M.Iter(func(x string, _ bool) bool {
-		if set.M.Has(x) {
+	s.M.All(func(x string, _ bool) bool {
+		_, has := set.M.Get(x)
+		if has {
 			res = true
 			return true
 		}
@@ -89,7 +92,8 @@ func (set *StringSet) HasAnySet(s StringSet) bool {
 
 func (set *StringSet) HasAll(s ...string) bool {
 	for _, x := range s {
-		if !set.M.Has(x) {
+		_, has := set.M.Get(x)
+		if !has {
 			return false
 		}
 	}
@@ -98,8 +102,9 @@ func (set *StringSet) HasAll(s ...string) bool {
 
 func (set *StringSet) HasAllSet(s *StringSet) bool {
 	res := true
-	s.M.Iter(func(x string, _ bool) bool {
-		if !set.M.Has(x) {
+	s.M.All(func(x string, _ bool) bool {
+		_, has := set.M.Get(x)
+		if !has {
 			res = false
 			return true
 		}
@@ -116,7 +121,7 @@ func (set *StringSet) Add(s ...string) *StringSet {
 }
 
 func (set *StringSet) AddSet(s StringSet) *StringSet {
-	s.M.Iter(func(x string, _ bool) bool {
+	s.M.All(func(x string, _ bool) bool {
 		set.M.Put(x, true)
 		return false
 	})
@@ -131,8 +136,8 @@ func (set *StringSet) Remove(s ...string) *StringSet {
 }
 
 func (set *StringSet) Slice() []string {
-	ret := make([]string, 0, set.M.Count())
-	set.M.Iter(func(x string, _ bool) bool {
+	ret := make([]string, 0, set.M.Len())
+	set.M.All(func(x string, _ bool) bool {
 		ret = append(ret, x)
 		return false
 	})
@@ -151,19 +156,21 @@ func (set *StringSet) String() string {
 
 func (set *StringSet) Len() int {
 
-	return set.M.Count()
+	return set.M.Len()
 }
 
 func (set *StringSet) Replace(other *StringSet, handleRemoved, handleAdded func(string)) {
-	set.M.Iter(func(x string, _ bool) bool {
-		if !other.M.Has(x) {
+	set.M.All(func(x string, _ bool) bool {
+		_, has := other.M.Get(x)
+		if !has {
 			handleRemoved(x)
 		}
 		return false
 	})
-	newSet := swiss.NewMap[string, bool](uint32(other.M.Count()))
-	other.M.Iter(func(x string, _ bool) bool {
-		if !set.M.Has(x) {
+	newSet := swiss.New[string, bool](other.M.Len())
+	other.M.All(func(x string, _ bool) bool {
+		_, has := set.M.Get(x)
+		if !has {
 			handleAdded(x)
 		}
 		newSet.Put(x, true)

@@ -99,6 +99,7 @@ func BenchmarkFindEdgeLabel(b *testing.B) {
 			g.NewEdge(nodes[i], nodes[i+1], label, nil, nil)
 		}
 	}
+	b.ResetTimer()
 	edgeHasLabel := func(edge *Edge, str string) bool {
 		return edge.GetLabel() == str
 	}
@@ -128,6 +129,7 @@ func BenchmarkFindEdgeProp(b *testing.B) {
 			}
 		}
 	}
+	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		for nodes := g.GetNodes(); nodes.Next(); {
 			node := nodes.Node()
