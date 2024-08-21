@@ -63,6 +63,14 @@ func (node *Node) HasAnyContext(contexts ...string) bool {
 func (node *Node) HasAllContext(context ...string) bool {
 	return node.contexts.HasAll(context...)
 }
+
+func (node *Node) HasAllContextsSet(contexts *StringSet) bool {
+	return node.contexts.HasAllSet(contexts)
+}
+
+func (node *Node) HasAnyContextsSet(contexts *StringSet) bool {
+	return node.contexts.HasAnySet(contexts)
+}
 func (node *Node) SetContexts(contexts *StringSet) {
 	node.graph.setNodeContexts(node, contexts)
 }

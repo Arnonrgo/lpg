@@ -75,7 +75,7 @@ func (set *StringSet) HasAny(s ...string) bool {
 	return false
 }
 
-func (set *StringSet) HasAnySet(s StringSet) bool {
+func (set *StringSet) HasAnySet(s *StringSet) bool {
 	res := false
 	s.M.Iter(func(x string, _ bool) bool {
 		if set.M.Has(x) {

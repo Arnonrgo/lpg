@@ -101,6 +101,14 @@ func (edge *Edge) HasAnyContext(contexts ...string) bool {
 func (edge *Edge) HasAllContexts(context ...string) bool {
 	return edge.contexts.HasAll(context...)
 }
+func (edge *Edge) HasAllContextsSet(contexts *StringSet) bool {
+	return edge.contexts.HasAllSet(contexts)
+}
+
+func (edge *Edge) HasAnyContextsSet(contexts *StringSet) bool {
+	return edge.contexts.HasAnySet(contexts)
+}
+
 func (edge *Edge) SetContexts(contexts *StringSet) {
 	edge.from.graph.setEdgeContext(edge, contexts)
 }
