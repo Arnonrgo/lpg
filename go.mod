@@ -1,6 +1,6 @@
 module github.com/Arnonrgo/lpg/v3
 
-go 1.22
+go 1.23
 
 require (
 	github.com/dolthub/swiss v0.2.1
