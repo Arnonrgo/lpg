@@ -177,7 +177,7 @@ func (em edgeMap) iteratorAnyLabel(labels *StringSet, listIndex int) EdgeIterato
 				}
 				itr := em.iteratorLabel(strings[0], listIndex)
 				strings = strings[1:]
-				return withSize(itr, -1)
+				return withSize(itr, 1)
 			}
 			return nil
 		},

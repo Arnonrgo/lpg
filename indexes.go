@@ -14,6 +14,11 @@
 
 package lpg
 
+import (
+	"errors"
+	"fmt"
+)
+
 type Item interface {
 	any
 }
@@ -35,6 +40,7 @@ const (
 type graphIndex struct {
 	nodesByLabel   NodeMap
 	nodesByContext index[string, *Node]
+	edgesByLabel   index[string, *Edge]
 	edgesByContext index[string, *Edge]
 	nodeProperties map[string]index[string, *Node]
 	edgeProperties map[string]index[string, *Edge]
@@ -43,6 +49,7 @@ type graphIndex struct {
 func newGraphIndex() graphIndex {
 	return graphIndex{
 		nodesByLabel:   *NewNodeMap(),
+		edgesByLabel:   &setTree[string, *Edge]{},
 		nodesByContext: &setTree[string, *Node]{},
 		edgesByContext: &setTree[string, *Edge]{},
 		nodeProperties: make(map[string]index[string, *Node]),
@@ -86,13 +93,13 @@ func (g *graphIndex) isEdgePropertyIndexed(propertyName string) index[string, *E
 // GetIteratorForNodeProperty returns an iterator for the given
 // key/value, and the max size of the resultset. If no index found,
 // returns nil,-1
-func (g *graphIndex) GetIteratorForNodeProperty(key string, value string) NodeIterator {
+func (g *graphIndex) GetIteratorForNodeProperty(key string, value string) (NodeIterator, error) {
 	index, found := g.nodeProperties[key]
 	if !found {
-		return nil
+		return nil, errors.New(fmt.Sprintf("no index found for key %s", key))
 	}
 	itr := index.find(value)
-	return nodeIterator{itr}
+	return nodeIterator{itr}, nil
 }
 
 // NodesWithProperty returns an iterator that will go through the
@@ -175,6 +182,7 @@ func (g *graphIndex) addEdgeToIndex(edge *Edge) {
 		g.edgesByContext.add(k, edge.id, edge)
 		return false
 	})
+	g.edgesByLabel.add(edge.label, edge.id, edge)
 	for k, v := range edge.properties {
 		index, found := g.edgeProperties[k]
 		if !found {
@@ -190,7 +198,7 @@ func (g *graphIndex) removeEdgeFromIndex(edge *Edge) {
 		g.edgesByContext.remove(k, edge.id)
 		return false
 	})
-
+	g.edgesByLabel.remove(edge.label, edge.id)
 	for k, v := range edge.properties {
 		index, found := g.edgeProperties[k]
 		if !found {
@@ -203,12 +211,33 @@ func (g *graphIndex) removeEdgeFromIndex(edge *Edge) {
 
 // GetIteratorForEdgeProperty returns an iterator for the given
 // key/value, and the max size of the resultset. If no index found,
-// returns nil,-1
-func (g *graphIndex) GetIteratorForEdgeProperty(key string, value string) EdgeIterator {
+// returns nil,err
+func (g *graphIndex) GetIteratorForEdgeProperty(key string, value string) (EdgeIterator, error) {
 	index, found := g.edgeProperties[key]
 	if !found {
-		return nil
+		return nil, errors.New(fmt.Sprintf("no index found for key %s", key))
 	}
 	itr := index.find(value)
-	return edgeIterator{itr}
+	return edgeIterator{itr}, nil
+}
+
+func (g *graphIndex) edgeIteratorAllContexts(contexts *StringSet) EdgeIterator {
+	// Find the smallest map element, iterate that
+	var itr Iterator
+	contexts.Iter(func(label string) bool {
+		litr := g.edgesByContext.find(label)
+		if itr == nil || itr.MaxSize() < litr.MaxSize() {
+			itr = litr
+		}
+		return false
+	})
+
+	flt := &filterIterator{
+		itr: withSize(itr, itr.MaxSize()),
+		filter: func(item interface{}) bool {
+			oedge := item.(*Edge)
+			return contexts.Has(oedge.label)
+		},
+	}
+	return edgeIterator{flt}
 }

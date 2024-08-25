@@ -125,7 +125,7 @@ func (p *PatternItem) estimateNodeSize(g *Graph, symbols map[string]*PatternSymb
 	if p.Properties != nil && len(p.Properties) > 0 {
 		for k, v := range p.Properties {
 			prop := fmt.Sprintf("%v", v)
-			itr := g.index.GetIteratorForNodeProperty(k, prop)
+			itr, _ := g.index.GetIteratorForNodeProperty(k, prop)
 			if itr == nil {
 				continue
 			}
@@ -187,7 +187,7 @@ func (p PatternItem) estimateEdgeSize(g *Graph, symbols map[string]*PatternSymbo
 	if p.Properties != nil && len(p.Properties) > 0 {
 		for k, v := range p.Properties {
 			prop := fmt.Sprintf("%v", v)
-			itr := g.index.GetIteratorForEdgeProperty(k, prop)
+			itr, _ := g.index.GetIteratorForEdgeProperty(k, prop)
 			if itr == nil {
 				continue
 			}

@@ -30,7 +30,7 @@ func TestBtreeNodeIndex(t *testing.T) {
 			data[fmt.Sprintf("%s:%d", l, i)] = struct{}{}
 		}
 	}
-	itr := g.index.GetIteratorForNodeProperty("index", "0")
+	itr, _ := g.index.GetIteratorForNodeProperty("index", "0")
 	if size := itr.MaxSize(); size != 6 {
 		t.Errorf("Expecting 6, got %d", size)
 	}
@@ -55,7 +55,7 @@ func TestHashNodeIndex(t *testing.T) {
 			data[fmt.Sprintf("%s:%d", l, i)] = struct{}{}
 		}
 	}
-	itr := g.index.GetIteratorForNodeProperty("index", "0")
+	itr, _ := g.index.GetIteratorForNodeProperty("index", "0")
 	if size := itr.MaxSize(); size != 6 {
 		t.Errorf("Expecting 6, got %d", size)
 	}

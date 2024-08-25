@@ -132,7 +132,9 @@ func (itr *procIterator) Value() interface{} {
 	return itr.proc(itr.itr.Value())
 }
 
-func (itr *procIterator) MaxSize() int { return itr.itr.MaxSize() }
+func (itr *procIterator) MaxSize() int {
+	return itr.itr.MaxSize()
+}
 
 // makeUniqueIterator returns a filter iterator that will filter out duplicates
 func makeUniqueIterator(itr Iterator) Iterator {
@@ -175,7 +177,7 @@ func (itr *funcIterator) Value() interface{} {
 	return itr.current.Value()
 }
 
-func (itr *funcIterator) MaxSize() int { return -1 }
+func (itr *funcIterator) MaxSize() int { return 1 }
 
 // MultiIterator returns an iterator that contatenates all the given iterators
 func MultiIterator(iterators ...Iterator) Iterator {

@@ -15,6 +15,7 @@
 package lpg
 
 import (
+	"errors"
 	"fmt"
 	"github.com/kamstrup/intmap"
 )
@@ -269,23 +270,28 @@ func (g *Graph) ProcessEdgesWithAnyContext(contexts *StringSet, handler func(*Ed
 // nodes that have all of the given labels and properties. If
 // allLabels is nil or empty, it does not look at the labels. If
 // properties is nil or empty, it does not look at the properties
-func (g *Graph) FindNodes(allLabels *StringSet, properties map[string]interface{}) NodeIterator {
+func (g *Graph) FindNodes(allLabels *StringSet, properties map[string]interface{}) (NodeIterator, error) {
 	if allLabels.Len() == 0 && len(properties) == 0 {
 		// Return all nodes
-		return g.GetNodes()
+		return g.GetNodes(), errors.New("no label or properties provided")
 	}
 
 	var nodesByLabelItr NodeIterator
+	nodesByLabelSize := -1
 	if allLabels.Len() > 0 {
 		nodesByLabelItr = g.index.nodesByLabel.IteratorAllLabels(allLabels)
+		nodesByLabelSize = nodesByLabelItr.MaxSize()
 	}
 	// Select the iterator with minimum max size
-	nodesByLabelSize := nodesByLabelItr.MaxSize()
+
 	propertyIterators := make(map[string]NodeIterator)
 	if len(properties) > 0 {
 		for k, v := range properties {
 			prop := fmt.Sprintf("%v", v)
-			itr := g.index.GetIteratorForNodeProperty(k, prop)
+			itr, err := g.index.GetIteratorForNodeProperty(k, prop)
+			if err != nil {
+				return nil, err
+			}
 			if itr == nil {
 				continue
 			}
@@ -317,7 +323,7 @@ func (g *Graph) FindNodes(allLabels *StringSet, properties map[string]interface{
 					return nodeFilterFunc(item.(*Node))
 				},
 			},
-		}
+		}, nil
 	}
 	if minPropertySize != -1 {
 		// Iterate by property
@@ -328,10 +334,10 @@ func (g *Graph) FindNodes(allLabels *StringSet, properties map[string]interface{
 					return nodeFilterFunc(item.(*Node))
 				},
 			},
-		}
+		}, nil
 	}
 	// Iterate all
-	return g.GetNodes()
+	return nil, errors.New("nothing found")
 }
 
 // FindEdges returns an iterator that will iterate through all the
@@ -339,29 +345,38 @@ func (g *Graph) FindNodes(allLabels *StringSet, properties map[string]interface{
 // properties. If labels is nil or empty, it does not look at the
 // labels. If properties is nil or empty, it does not look at the
 // properties
-func (g *Graph) FindEdges(labels *StringSet, properties map[string]interface{}) EdgeIterator {
-	if (labels == nil || labels.Len() == 0) && len(properties) == 0 {
+// it can only find a single label since edges only have one label so multiple ones will always return empty
+func (g *Graph) FindEdges(label string, properties map[string]interface{}) (EdgeIterator, error) {
+	if (label == "") && len(properties) == 0 {
 		// Return all edges
-		return g.GetEdges()
+		return g.GetEdges(), errors.New("no label or properties provided")
 	}
 
 	var edgesByLabelItr EdgeIterator
-	if labels != nil && labels.Len() > 0 {
-		edgesByLabelItr = g.GetEdgesWithAnyLabel(labels)
+	edgesByLabelSize := -1
+	if label != "" {
+		//edgesByLabelItr = g.index.edgeIteratorAllLabels(NewIteratorlabel)
+
+		edgesByLabelItr = g.GetEdgesWithAnyLabel(NewStringSet(label))
+		edgesByLabelSize = edgesByLabelItr.MaxSize()
 	}
 	// Select the iterator with minimum max size
-	edgesByLabelSize := edgesByLabelItr.MaxSize()
+
 	propertyIterators := make(map[string]EdgeIterator)
 	if len(properties) > 0 {
 		for k, v := range properties {
 			prop := fmt.Sprintf("%v", v)
-			itr := g.index.GetIteratorForEdgeProperty(k, prop)
+			itr, err := g.index.GetIteratorForEdgeProperty(k, prop)
+			if err != nil {
+				return nil, err
+			}
 			if itr == nil {
 				continue
 			}
 			propertyIterators[k] = itr
 		}
 	}
+
 	var minimumPropertyItrKey string
 	minPropertySize := -1
 	for k, itr := range propertyIterators {
@@ -374,8 +389,10 @@ func (g *Graph) FindEdges(labels *StringSet, properties map[string]interface{}) 
 			minimumPropertyItrKey = k
 		}
 	}
-
-	edgeFilterFunc := GetEdgeFilterFunc(labels, properties)
+	edgeFilterFunc := GetEdgeFilterFunc(NewStringSet(label), properties)
+	if label == "" {
+		edgeFilterFunc = GetEdgeFilterFunc(nil, properties)
+	}
 	// Iterate the minimum iterator, with a filter
 	if edgesByLabelSize != -1 && (minPropertySize == -1 || minPropertySize > edgesByLabelSize) {
 		// Iterate by edge label
@@ -387,7 +404,7 @@ func (g *Graph) FindEdges(labels *StringSet, properties map[string]interface{}) 
 					return edgeFilterFunc(item.(*Edge))
 				},
 			},
-		}
+		}, nil
 	}
 	if minPropertySize != -1 {
 		// Iterate by property
@@ -398,10 +415,10 @@ func (g *Graph) FindEdges(labels *StringSet, properties map[string]interface{}) 
 					return edgeFilterFunc(item.(*Edge))
 				},
 			},
-		}
+		}, nil
 	}
 	// Iterate all
-	return g.GetEdges()
+	return nil, errors.New("nothing found")
 }
 
 // GetNodeFilterFunc returns a filter function that can be used to select

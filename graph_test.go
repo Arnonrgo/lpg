@@ -102,6 +102,161 @@ func TestRetrieveEdgesWithContexts(t *testing.T) {
 	}
 }
 
+func TestFind_MatchLabel(t *testing.T) {
+	nodes := make([]*Node, 0)
+	g := NewGraph()
+	for i := 0; i < 10; i++ {
+		nodes = append(nodes, g.NewNode([]string{fmt.Sprint(i)}, nil))
+	}
+	nodes = append(nodes, g.NewNode([]string{"h"}, nil))
+
+	for i := 0; i < len(nodes)-2; i++ {
+		g.NewEdge(nodes[i], nodes[i+1], "edge", nil, NewStringSet("default", "whatever"))
+	}
+	for i := 0; i < len(nodes)-2; i++ {
+		g.NewEdge(nodes[i], nodes[i+1], "other", map[string]interface{}{"a": "test"}, nil)
+	}
+	g.NewEdge(nodes[0], nodes[1], "special", map[string]interface{}{"b": "test"}, nil)
+
+	// return only matching when label is found
+	found := 0
+	match, _ := g.FindNodes(NewStringSet("h"), map[string]interface{}{})
+	for match.Next() {
+		found++
+		assert.Equal(t, "h", match.Node().GetLabels().Slice()[0])
+	}
+	assert.Equal(t, 1, found)
+	found = 0
+	ematch, _ := g.FindEdges("special", map[string]interface{}{})
+	for ematch.Next() {
+		found++
+		assert.Equal(t, "special", ematch.Edge().label)
+	}
+	assert.Equal(t, 1, found)
+}
+
+func TestFind_MatchProperty(t *testing.T) {
+	nodes := make([]*Node, 0)
+	g := NewGraph()
+	g.AddNodePropertyIndex("a", BtreeIndex)
+	g.AddEdgePropertyIndex("b", BtreeIndex)
+	for i := 0; i < 10; i++ {
+		nodes = append(nodes, g.NewNode([]string{fmt.Sprint(i)}, nil))
+	}
+	nodes = append(nodes, g.NewNode([]string{"h"}, map[string]interface{}{"a": "test"}))
+
+	for i := 0; i < len(nodes)-2; i++ {
+		g.NewEdge(nodes[i], nodes[i+1], "edge", nil, NewStringSet("default", "whatever"))
+	}
+	for i := 0; i < len(nodes)-2; i++ {
+		g.NewEdge(nodes[i], nodes[i+1], "other", map[string]interface{}{"a": "test"}, nil)
+	}
+	g.NewEdge(nodes[0], nodes[1], "special", map[string]interface{}{"b": "test"}, nil)
+
+	// return only matching when label is found
+	found := 0
+	match, _ := g.FindNodes(nil, map[string]interface{}{"a": "test"})
+	for match.Next() {
+		found++
+		assert.Equal(t, "h", match.Node().GetLabels().Slice()[0])
+	}
+	assert.Equal(t, 1, found)
+	found = 0
+	ematch, _ := g.FindEdges("", map[string]interface{}{"b": "test"})
+	for ematch.Next() {
+		found++
+		assert.Equal(t, "special", ematch.Edge().label)
+	}
+	assert.Equal(t, 1, found)
+}
+
+func TestFind_EmptyOnNonExistingLabels(t *testing.T) {
+	nodes := make([]*Node, 0)
+	g := NewGraph()
+	for i := 0; i < 10; i++ {
+		nodes = append(nodes, g.NewNode([]string{fmt.Sprint(i)}, nil))
+	}
+	nodes = append(nodes, g.NewNode([]string{"h"}, nil))
+
+	for i := 0; i < len(nodes)-2; i++ {
+		g.NewEdge(nodes[i], nodes[i+1], "edge", nil, NewStringSet("default", "whatever"))
+	}
+	for i := 0; i < len(nodes)-2; i++ {
+		g.NewEdge(nodes[i], nodes[i+1], "other", map[string]interface{}{"a": "test"}, nil)
+	}
+	g.NewEdge(nodes[0], nodes[1], "special", map[string]interface{}{"b": "test"}, nil)
+
+	// can't find labels returns empty
+	match, _ := g.FindNodes(NewStringSet("blah", "h"), map[string]interface{}{})
+	assert.False(t, match.Next())
+	edges, _ := g.FindEdges("blah", map[string]interface{}{})
+	assert.False(t, edges.Next())
+
+}
+func TestFind_ErrorWhenPropertyNotIndexed(t *testing.T) {
+	nodes := make([]*Node, 0)
+	g := NewGraph()
+	for i := 0; i < 10; i++ {
+		nodes = append(nodes, g.NewNode([]string{fmt.Sprint(i)}, nil))
+	}
+	nodes = append(nodes, g.NewNode([]string{"h"}, nil))
+
+	for i := 0; i < len(nodes)-2; i++ {
+		g.NewEdge(nodes[i], nodes[i+1], "edge", nil, NewStringSet("default", "whatever"))
+	}
+	for i := 0; i < len(nodes)-2; i++ {
+		g.NewEdge(nodes[i], nodes[i+1], "other", map[string]interface{}{"a": "test"}, nil)
+	}
+	g.NewEdge(nodes[0], nodes[1], "special", map[string]interface{}{"b": "test"}, nil)
+
+	size := 0
+	_, err := g.FindNodes(NewStringSet("special"), map[string]interface{}{"b": "test"})
+	assert.Error(t, err)
+	assert.Equal(t, 0, size)
+
+	size = 0
+	_, err = g.FindEdges("special", map[string]interface{}{"b": "test"})
+	assert.Error(t, err)
+	assert.Equal(t, 0, size)
+}
+
+func TestFind_FilterBothLabelAndProperty(t *testing.T) {
+	nodes := make([]*Node, 0)
+	g := NewGraph()
+	g.AddNodePropertyIndex("a", BtreeIndex)
+	g.AddEdgePropertyIndex("b", BtreeIndex)
+	for i := 0; i < 10; i++ {
+		nodes = append(nodes, g.NewNode([]string{fmt.Sprint(i)}, nil))
+	}
+	nodes = append(nodes, g.NewNode([]string{"a"}, map[string]interface{}{"a": "test"}))
+	nodes = append(nodes, g.NewNode([]string{"b"}, map[string]interface{}{"a": "test"}))
+
+	for i := 0; i < len(nodes)-2; i++ {
+		g.NewEdge(nodes[i], nodes[i+1], "edge", nil, NewStringSet("default", "whatever"))
+	}
+	for i := 0; i < len(nodes)-2; i++ {
+		g.NewEdge(nodes[i], nodes[i+1], "other", map[string]interface{}{"a": "test"}, nil)
+	}
+	g.NewEdge(nodes[0], nodes[1], "b", map[string]interface{}{"b": "test"}, nil)
+	g.NewEdge(nodes[0], nodes[1], "c", map[string]interface{}{"b": "test"}, nil)
+
+	// return only matching when label is found
+	found := 0
+	match, _ := g.FindNodes(NewStringSet("a"), map[string]interface{}{"a": "test"})
+	for match.Next() {
+		found++
+		assert.Equal(t, "a", match.Node().GetLabels().Slice()[0])
+	}
+	assert.Equal(t, 1, found)
+	found = 0
+	ematch, _ := g.FindEdges("b", map[string]interface{}{"b": "test"})
+	for ematch.Next() {
+		found++
+		assert.Equal(t, "b", ematch.Edge().label)
+	}
+	assert.Equal(t, 1, found)
+}
+
 func BenchmarkGetProperty(b *testing.B) {
 	g := NewGraph()
 	for i := 0; i < 1000; i++ {

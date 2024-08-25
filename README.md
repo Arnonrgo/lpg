@@ -3,6 +3,17 @@
 [![Build Status](https://github.com/cloudprivacylabs/lpg/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/cloudprivacylabs/lpg/actions/workflows/CI.yml)
 # Labeled property graphs
 
+
+This Go module is modified version of the one that is part of the [Layered Schema
+Architecture](https://layeredschemas.org).
+
+Main changes vs original
+* changed (most) underlying datastructures to more efficient ones (4x-10x improvement for my use case YMMV)
+* added support for contexts (something in the middle between labels and properties)
+* changed the behavior of Find to work more logically (e.g. return empty on misses rather than all nodes/edges)
+* properties are now converted to strings regardless of original type
+
+
 This labeled property graph package implements the openCypher model of
 labeled property graphs. A labeled property graph (LPG) contains nodes
 and directed edges between those nodes. Every node contains:
@@ -127,6 +138,4 @@ is assumed to be the source node. Edges under the top-level `edges`
 array include both a `from` and a `to` index.
 
 
-This Go module is modified version of the one that is part of the [Layered Schema
-Architecture](https://layeredschemas.org).
 

@@ -150,7 +150,9 @@ func (set *StringSet) String() string {
 }
 
 func (set *StringSet) Len() int {
-
+	if set == nil {
+		return 0
+	}
 	return set.M.Count()
 }
 
