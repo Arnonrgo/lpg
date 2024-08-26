@@ -1,6 +1,6 @@
-[![GoDoc](https://godoc.org/github.com/Arnonrgo/lpg?status.svg)](https://godoc.org/github.com/Arnonrgo/lpg/v2)
-[![Go Report Card](https://goreportcard.com/badge/github.com/Arnonrgo/lpg)](https://goreportcard.com/report/github.com/cloudprivacylabs/lpg/v2)
-[![Build Status](https://github.com/Arnonrgo/lpg/actions/workflows/CI.yml/badge.svg?branch=v3)](https://github.com/cloudprivacylabs/lpg/actions/workflows/CI.yml)
+[![GoDoc](https://godoc.org/github.com/Arnonrgo/lpg?status.svg)](https://godoc.org/github.com/Arnonrgo/lpg/v3)
+[![Go Report Card](https://goreportcard.com/badge/github.com/Arnonrgo/lpg)](https://goreportcard.com/report/github.com/Arnonrgo/lpg/v3)
+[![Build Status](https://github.com/Arnonrgo/lpg/actions/workflows/CI.yml/badge.svg?branch=v3)](https://github.com/Arnonrgo/lpg/actions/workflows/CI.yml)
 # Labeled property graphs
 
 
@@ -29,7 +29,7 @@ Every edge contains:
 A `Graph` objects keeps an index of the nodes and edges included in
 it. Create a graph using `NewGraph` function:
 
-```
+``` go
 g := lpg.NewGraph()
 // Create two nodes
 n1 := g.NewNode([]string{"label1"},map[string]any{"prop": "value1" }, nil)
