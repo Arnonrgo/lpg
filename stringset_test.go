@@ -30,6 +30,17 @@ func TestStringSet_Replace(t *testing.T) {
 	assert.Equal(t, 2, removed)
 }
 
+func TestStringSet_Intersect(t *testing.T) {
+	set := NewStringSet("a", "b", "c")
+	other := NewStringSet("a", "d", "e", "c")
+	intersect := set.Intersect(other)
+	assert.True(t, intersect.Has("a"))
+	assert.True(t, intersect.Has("c"))
+	assert.False(t, intersect.Has("b"))
+	assert.False(t, intersect.Has("d"))
+	assert.False(t, intersect.Has("e"))
+}
+
 func BenchmarkCloneSet(b *testing.B) {
 	set := NewStringSet("a", "b")
 	for n := 0; n < b.N; n++ {

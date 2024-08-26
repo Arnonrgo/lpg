@@ -74,6 +74,22 @@ func (set *StringSet) HasAny(s ...string) bool {
 	}
 	return false
 }
+func (set *StringSet) Intersect(s *StringSet) *StringSet {
+	newSet := StringSet{M: swiss.NewMap[string, bool](uint32(set.M.Count()))}
+	setToIterate := set
+	other := s
+	if set.M.Count() > s.M.Count() {
+		setToIterate = s
+		other = set
+	}
+	setToIterate.M.Iter(func(x string, _ bool) bool {
+		if other.M.Has(x) {
+			newSet.M.Put(x, true)
+		}
+		return false
+	})
+	return &newSet
+}
 
 func (set *StringSet) HasAnySet(s *StringSet) bool {
 	res := false
@@ -88,6 +104,9 @@ func (set *StringSet) HasAnySet(s *StringSet) bool {
 }
 
 func (set *StringSet) HasAll(s ...string) bool {
+	if len(s) == 0 || set.M.Count() < len(s) {
+		return false
+	}
 	for _, x := range s {
 		if !set.M.Has(x) {
 			return false
@@ -97,6 +116,9 @@ func (set *StringSet) HasAll(s ...string) bool {
 }
 
 func (set *StringSet) HasAllSet(s *StringSet) bool {
+	if set.M.Count() < s.M.Count() {
+		return false
+	}
 	res := true
 	s.M.Iter(func(x string, _ bool) bool {
 		if !set.M.Has(x) {
