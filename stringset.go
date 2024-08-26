@@ -44,6 +44,9 @@ func (set *StringSet) CloneN(n int) *StringSet {
 }
 
 func (set *StringSet) Iter(f func(string) bool) {
+	if set == nil {
+		return
+	}
 	set.M.Iter(func(x string, _ bool) bool {
 		return f(x)
 	})

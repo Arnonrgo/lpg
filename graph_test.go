@@ -24,7 +24,7 @@ func TestGraphCRUD(t *testing.T) {
 	g := NewGraph()
 	nodes := make([]*Node, 0)
 	for i := 0; i < 10; i++ {
-		nodes = append(nodes, g.NewNode([]string{fmt.Sprint(i)}, nil))
+		nodes = append(nodes, g.NewNode([]string{fmt.Sprint(i)}, nil, nil))
 	}
 	for i := 0; i < len(nodes)-1; i++ {
 		g.NewEdge(nodes[i], nodes[i+1], "e", nil, nil)
@@ -50,7 +50,7 @@ func TestContexts(t *testing.T) {
 	g := NewGraph()
 
 	for i := 0; i < 10; i++ {
-		nodes = append(nodes, g.NewNode([]string{fmt.Sprint(i)}, nil))
+		nodes = append(nodes, g.NewNode([]string{fmt.Sprint(i)}, nil, nil))
 	}
 	for i := 0; i < len(nodes)-2; i++ {
 		g.NewEdge(nodes[i], nodes[i+1], "e", nil, NewStringSet("default", "whatever"))
@@ -82,7 +82,7 @@ func TestRetrieveEdgesWithContexts(t *testing.T) {
 	g := NewGraph()
 
 	for i := 0; i < 10; i++ {
-		nodes = append(nodes, g.NewNode([]string{fmt.Sprint(i)}, nil))
+		nodes = append(nodes, g.NewNode([]string{fmt.Sprint(i)}, nil, nil))
 	}
 	for i := 0; i < len(nodes)-2; i++ {
 		g.NewEdge(nodes[i], nodes[i+1], "edge", nil, NewStringSet("default", "whatever"))
@@ -98,7 +98,7 @@ func TestRetrieveEdgesWithContexts(t *testing.T) {
 	edges = g.GetEdgesWithAnyLabel(NewStringSet("edge"))
 	for edges.Next() {
 		fmt.Println("edge")
-		assert.Equal(t, "edg", edges.Edge().GetLabel())
+		assert.Equal(t, "edge", edges.Edge().GetLabel())
 	}
 }
 
@@ -106,9 +106,9 @@ func TestFind_MatchLabel(t *testing.T) {
 	nodes := make([]*Node, 0)
 	g := NewGraph()
 	for i := 0; i < 10; i++ {
-		nodes = append(nodes, g.NewNode([]string{fmt.Sprint(i)}, nil))
+		nodes = append(nodes, g.NewNode([]string{fmt.Sprint(i)}, nil, nil))
 	}
-	nodes = append(nodes, g.NewNode([]string{"h"}, nil))
+	nodes = append(nodes, g.NewNode([]string{"h"}, nil, nil))
 
 	for i := 0; i < len(nodes)-2; i++ {
 		g.NewEdge(nodes[i], nodes[i+1], "edge", nil, NewStringSet("default", "whatever"))
@@ -141,9 +141,9 @@ func TestFind_MatchProperty(t *testing.T) {
 	g.AddNodePropertyIndex("a", BtreeIndex)
 	g.AddEdgePropertyIndex("b", BtreeIndex)
 	for i := 0; i < 10; i++ {
-		nodes = append(nodes, g.NewNode([]string{fmt.Sprint(i)}, nil))
+		nodes = append(nodes, g.NewNode([]string{fmt.Sprint(i)}, nil, nil))
 	}
-	nodes = append(nodes, g.NewNode([]string{"h"}, map[string]interface{}{"a": "test"}))
+	nodes = append(nodes, g.NewNode([]string{"h"}, map[string]interface{}{"a": "test"}, nil))
 
 	for i := 0; i < len(nodes)-2; i++ {
 		g.NewEdge(nodes[i], nodes[i+1], "edge", nil, NewStringSet("default", "whatever"))
@@ -174,9 +174,9 @@ func TestFind_EmptyOnNonExistingLabels(t *testing.T) {
 	nodes := make([]*Node, 0)
 	g := NewGraph()
 	for i := 0; i < 10; i++ {
-		nodes = append(nodes, g.NewNode([]string{fmt.Sprint(i)}, nil))
+		nodes = append(nodes, g.NewNode([]string{fmt.Sprint(i)}, nil, nil))
 	}
-	nodes = append(nodes, g.NewNode([]string{"h"}, nil))
+	nodes = append(nodes, g.NewNode([]string{"h"}, nil, nil))
 
 	for i := 0; i < len(nodes)-2; i++ {
 		g.NewEdge(nodes[i], nodes[i+1], "edge", nil, NewStringSet("default", "whatever"))
@@ -197,9 +197,9 @@ func TestFind_ErrorWhenPropertyNotIndexed(t *testing.T) {
 	nodes := make([]*Node, 0)
 	g := NewGraph()
 	for i := 0; i < 10; i++ {
-		nodes = append(nodes, g.NewNode([]string{fmt.Sprint(i)}, nil))
+		nodes = append(nodes, g.NewNode([]string{fmt.Sprint(i)}, nil, nil))
 	}
-	nodes = append(nodes, g.NewNode([]string{"h"}, nil))
+	nodes = append(nodes, g.NewNode([]string{"h"}, nil, nil))
 
 	for i := 0; i < len(nodes)-2; i++ {
 		g.NewEdge(nodes[i], nodes[i+1], "edge", nil, NewStringSet("default", "whatever"))
@@ -226,10 +226,10 @@ func TestFind_FilterBothLabelAndProperty(t *testing.T) {
 	g.AddNodePropertyIndex("a", BtreeIndex)
 	g.AddEdgePropertyIndex("b", BtreeIndex)
 	for i := 0; i < 10; i++ {
-		nodes = append(nodes, g.NewNode([]string{fmt.Sprint(i)}, nil))
+		nodes = append(nodes, g.NewNode([]string{fmt.Sprint(i)}, nil, nil))
 	}
-	nodes = append(nodes, g.NewNode([]string{"a"}, map[string]interface{}{"a": "test"}))
-	nodes = append(nodes, g.NewNode([]string{"b"}, map[string]interface{}{"a": "test"}))
+	nodes = append(nodes, g.NewNode([]string{"a"}, map[string]interface{}{"a": "test"}, nil))
+	nodes = append(nodes, g.NewNode([]string{"b"}, map[string]interface{}{"a": "test"}, nil))
 
 	for i := 0; i < len(nodes)-2; i++ {
 		g.NewEdge(nodes[i], nodes[i+1], "edge", nil, NewStringSet("default", "whatever"))
@@ -261,7 +261,7 @@ func BenchmarkGetProperty(b *testing.B) {
 	g := NewGraph()
 	for i := 0; i < 1000; i++ {
 		is := fmt.Sprintf("%v", i)
-		node := g.NewNode([]string{"a", "b", "c", is}, map[string]interface{}{"a": "b", "c": "d"})
+		node := g.NewNode([]string{"a", "b", "c", is}, map[string]interface{}{"a": "b", "c": "d"}, nil)
 		node.GetProperty("a")
 		node.GetProperty("blasah")
 
@@ -282,7 +282,7 @@ func BenchmarkGetProperty(b *testing.B) {
 func BenchmarkAddNode(b *testing.B) {
 	g := NewGraph()
 	for n := 0; n < b.N; n++ {
-		g.NewNode([]string{"a", "b", "c"}, map[string]interface{}{"a": "b", "c": "d"})
+		g.NewNode([]string{"a", "b", "c"}, map[string]interface{}{"a": "b", "c": "d"}, nil)
 	}
 }
 
@@ -290,7 +290,7 @@ func benchmarkItrNodes(numNodes int, b *testing.B) {
 	g := NewGraph()
 	var x *Node
 	for i := 0; i < numNodes; i++ {
-		g.NewNode([]string{"a", "b", "c"}, map[string]interface{}{"a": "b", "c": "d"})
+		g.NewNode([]string{"a", "b", "c"}, map[string]interface{}{"a": "b", "c": "d"}, nil)
 	}
 	for n := 0; n < b.N; n++ {
 		for nodes := g.GetNodes(); nodes.Next(); {
@@ -307,7 +307,7 @@ func benchmarkItrNodesViaIndex(numNodes int, b *testing.B) {
 	g := NewGraph()
 	var x *Node
 	for i := 0; i < numNodes; i++ {
-		g.NewNode([]string{"a", "b", "c"}, map[string]interface{}{"a": "b", "c": "d"})
+		g.NewNode([]string{"a", "b", "c"}, map[string]interface{}{"a": "b", "c": "d"}, nil)
 	}
 	for n := 0; n < b.N; n++ {
 		for nodes := g.index.nodesByLabel.Iterator(); nodes.Next(); {
@@ -324,7 +324,7 @@ func BenchmarkCreateEdge(b *testing.B) {
 	g := NewGraph()
 	nodes := make([]*Node, 0)
 	for i := 0; i < 1000; i++ {
-		nodes = append(nodes, g.NewNode([]string{fmt.Sprint(i)}, nil))
+		nodes = append(nodes, g.NewNode([]string{fmt.Sprint(i)}, nil, nil))
 	}
 	labels := []string{"a", "b", "c", "d"}
 
@@ -339,7 +339,7 @@ func BenchmarkItrAllEdge(b *testing.B) {
 	g := NewGraph()
 	nodes := make([]*Node, 0)
 	for i := 0; i < 1000; i++ {
-		nodes = append(nodes, g.NewNode([]string{fmt.Sprint(i)}, nil))
+		nodes = append(nodes, g.NewNode([]string{fmt.Sprint(i)}, nil, nil))
 	}
 	labels := []string{"a", "b", "c", "d"}
 	for i := 0; i < len(nodes)-1; i++ {
@@ -359,7 +359,7 @@ func BenchmarkItrNodeEdges(b *testing.B) {
 	g := NewGraph()
 	nodes := make([]*Node, 0)
 	for i := 0; i < 1000; i++ {
-		nodes = append(nodes, g.NewNode([]string{fmt.Sprint(i)}, nil))
+		nodes = append(nodes, g.NewNode([]string{fmt.Sprint(i)}, nil, nil))
 	}
 	labels := []string{"a", "b", "c", "d"}
 	for i := 0; i < len(nodes)-1; i++ {

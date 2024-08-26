@@ -25,7 +25,7 @@ func BenchmarkClone(b *testing.B) {
 	target := NewGraph()
 	nodes := make([]*Node, 0)
 	for i := 0; i < 10; i++ {
-		nodes = append(nodes, source.NewNode([]string{"a"}, nil))
+		nodes = append(nodes, source.NewNode([]string{"a"}, nil, nil))
 	}
 	for i := 0; i < 9; i++ {
 		source.NewEdge(nodes[i], nodes[i+1], "label", nil, nil)
@@ -43,7 +43,7 @@ func TestClone(t *testing.T) {
 	target := NewGraph() // target graph has empty strtable
 	nodes := make([]*Node, 0)
 	for i := 0; i < 10; i++ {
-		nodes = append(nodes, source.NewNode([]string{"a"}, map[string]interface{}{"key": i}))
+		nodes = append(nodes, source.NewNode([]string{"a"}, map[string]interface{}{"key": i}, nil))
 	}
 	for i := 0; i < 9; i++ {
 		source.NewEdge(nodes[i], nodes[i+1], "label", map[string]interface{}{"key": i}, nil)

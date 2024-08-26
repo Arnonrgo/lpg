@@ -23,7 +23,7 @@ func TestPattern(t *testing.T) {
 	graph.index.NodePropertyIndex("key", graph, BtreeIndex)
 	nodes := make([]*Node, 0)
 	for i := 0; i < 10; i++ {
-		nodes = append(nodes, graph.NewNode([]string{"a"}, nil))
+		nodes = append(nodes, graph.NewNode([]string{"a"}, nil, nil))
 	}
 	for i := 0; i < 9; i++ {
 		graph.NewEdge(nodes[i], nodes[i+1], "label", nil, nil)
@@ -191,10 +191,10 @@ func TestReverseSimplePath(t *testing.T) {
 
 func TestOCGetPattern(t *testing.T) {
 	g := NewGraph()
-	n1 := g.NewNode([]string{"root"}, nil)
-	n2 := g.NewNode([]string{"c1"}, nil)
-	n3 := g.NewNode([]string{"c2"}, nil)
-	n4 := g.NewNode([]string{"c3"}, nil)
+	n1 := g.NewNode([]string{"root"}, nil, nil)
+	n2 := g.NewNode([]string{"c1"}, nil, nil)
+	n3 := g.NewNode([]string{"c2"}, nil, nil)
+	n4 := g.NewNode([]string{"c3"}, nil, nil)
 
 	g.NewEdge(n1, n2, "n1n2", nil, nil)
 	g.NewEdge(n1, n3, "n1n3", nil, nil)
@@ -219,10 +219,10 @@ func TestOCGetPattern(t *testing.T) {
 
 func TestOCGetPattern2(t *testing.T) {
 	g := NewGraph()
-	n1 := g.NewNode([]string{"root"}, nil)
-	n2 := g.NewNode([]string{"c1"}, nil)
-	n3 := g.NewNode([]string{"c2"}, nil)
-	n4 := g.NewNode([]string{"c3"}, nil)
+	n1 := g.NewNode([]string{"root"}, nil, nil)
+	n2 := g.NewNode([]string{"c1"}, nil, nil)
+	n3 := g.NewNode([]string{"c2"}, nil, nil)
+	n4 := g.NewNode([]string{"c3"}, nil, nil)
 
 	g.NewEdge(n1, n2, "n1n2", nil, nil)
 	g.NewEdge(n1, n3, "n1n3", nil, nil)
@@ -252,7 +252,7 @@ func TestLoopPattern(t *testing.T) {
 	graph.index.NodePropertyIndex("key", graph, BtreeIndex)
 	nodes := make([]*Node, 0)
 	for i := 0; i < 10; i++ {
-		nodes = append(nodes, graph.NewNode([]string{"a"}, nil))
+		nodes = append(nodes, graph.NewNode([]string{"a"}, nil, nil))
 	}
 	for i := 0; i < 9; i++ {
 		graph.NewEdge(nodes[i], nodes[i+1], "label", nil, nil)
@@ -293,7 +293,7 @@ func TestVariableLengthPath(t *testing.T) {
 	graph.index.NodePropertyIndex("key", graph, BtreeIndex)
 	nodes := make([]*Node, 0)
 	for i := 0; i < 10; i++ {
-		nodes = append(nodes, graph.NewNode([]string{"a"}, nil))
+		nodes = append(nodes, graph.NewNode([]string{"a"}, nil, nil))
 	}
 	for i := 0; i < 9; i++ {
 		graph.NewEdge(nodes[i], nodes[i+1], "label", nil, nil)
@@ -341,7 +341,7 @@ func GetLineGraph(n int, withIndex bool) (*Graph, []*Node) {
 	}
 	nodes := make([]*Node, 0)
 	for i := 0; i < n; i++ {
-		nodes = append(nodes, graph.NewNode([]string{"a"}, nil))
+		nodes = append(nodes, graph.NewNode([]string{"a"}, nil, nil))
 	}
 	for i := 0; i < n-1; i++ {
 		graph.NewEdge(nodes[i], nodes[i+1], "label", nil, nil)
@@ -357,7 +357,7 @@ func GetLineGraphWithSelfLoops(n int, withIndex bool) (*Graph, []*Node) {
 	}
 	nodes := make([]*Node, 0)
 	for i := 0; i < n; i++ {
-		nodes = append(nodes, graph.NewNode([]string{"a"}, nil))
+		nodes = append(nodes, graph.NewNode([]string{"a"}, nil, nil))
 	}
 	for i := 0; i < n-1; i++ {
 		graph.NewEdge(nodes[i], nodes[i+1], "label", nil, nil)
@@ -375,7 +375,7 @@ func GetCircleGraph(n int, withIndex bool) (*Graph, []*Node) {
 	}
 	nodes := make([]*Node, 0)
 	for i := 0; i < n; i++ {
-		nodes = append(nodes, graph.NewNode([]string{"a"}, nil))
+		nodes = append(nodes, graph.NewNode([]string{"a"}, nil, nil))
 	}
 	for i := 0; i < n-1; i++ {
 		graph.NewEdge(nodes[i], nodes[i+1], "label", nil, nil)

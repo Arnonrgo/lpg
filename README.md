@@ -1,6 +1,6 @@
 [![GoDoc](https://godoc.org/github.com/Arnonrgo/lpg?status.svg)](https://godoc.org/github.com/Arnonrgo/lpg/v2)
-[![Go Report Card](https://goreportcard.com/badge/github.com/cloudprivacylabs/lpg)](https://goreportcard.com/report/github.com/cloudprivacylabs/lpg/v2)
-[![Build Status](https://github.com/cloudprivacylabs/lpg/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/cloudprivacylabs/lpg/actions/workflows/CI.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/Arnonrgo/lpg)](https://goreportcard.com/report/github.com/cloudprivacylabs/lpg/v2)
+[![Build Status](https://github.com/Arnonrgo/lpg/actions/workflows/CI.yml/badge.svg?branch=v3)](https://github.com/cloudprivacylabs/lpg/actions/workflows/CI.yml)
 # Labeled property graphs
 
 
@@ -9,7 +9,7 @@ Architecture](https://layeredschemas.org).
 
 Main changes vs original
 * changed (most) underlying datastructures to more efficient ones (4x-10x improvement for my use case YMMV)
-* added support for contexts (something in the middle between labels and properties)
+* added support for contexts (something in the middle between labels and properties) 
 * changed the behavior of Find to work more logically (e.g. return empty on misses rather than all nodes/edges)
 * properties are now converted to strings regardless of original type
 
@@ -32,10 +32,10 @@ it. Create a graph using `NewGraph` function:
 ```
 g := lpg.NewGraph()
 // Create two nodes
-n1 := g.NewNode([]string{"label1"},map[string]any{"prop": "value1" })
-n2 := g.NewNode([]string{"label2"},map[string]any{"prop": "value2" })
+n1 := g.NewNode([]string{"label1"},map[string]any{"prop": "value1" }, nil)
+n2 := g.FastNewNode(NewStringSet("label2"),map[string]any{"prop": "value2" }, NewStringSet("context1"))
 // Connect the two nodes with an edge
-edge:=g.NewEdge(n1,n2,"relatedTo",nil)
+edge:=g.NewEdge(n1,n2,"relatedTo",nil,nil)
 ```
 
 The LPG library uses iterators to address nodes and edges.

@@ -52,7 +52,7 @@ func NewGraph() *Graph {
 }
 
 // NewNode creates a new node with the given labels and properties
-func (g *Graph) NewNode(labels []string, props map[string]interface{}) *Node {
+func (g *Graph) NewNode(labels []string, props map[string]interface{}, contexts *StringSet) *Node {
 	var p properties
 	if len(props) > 0 {
 		p = make(properties, len(props))
@@ -60,17 +60,21 @@ func (g *Graph) NewNode(labels []string, props map[string]interface{}) *Node {
 			p[k] = v
 		}
 	}
-	return g.FastNewNode(NewStringSet(labels...), p)
+	return g.FastNewNode(NewStringSet(labels...), p, contexts)
 }
 
 // FastNewNode creates a new node with the given labels and
 // properties. This version does not copy the labels and properties,
 // but uses the given label set and map directly
-func (g *Graph) FastNewNode(labels *StringSet, props map[string]interface{}) *Node {
+func (g *Graph) FastNewNode(labels *StringSet, props map[string]interface{}, contexts *StringSet) *Node {
 	node := &Node{
 		labels:     labels,
 		graph:      g,
+		contexts:   contexts,
 		properties: properties(props),
+	}
+	if contexts == nil {
+		node.contexts = NewStringSet()
 	}
 	node.id = g.idBase
 	g.idBase++

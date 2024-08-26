@@ -26,7 +26,7 @@ func TestBtreeNodeIndex(t *testing.T) {
 	data := make(map[string]struct{})
 	for _, l := range labels {
 		for i := 0; i < 10; i++ {
-			g.NewNode([]string{l}, map[string]interface{}{"index": fmt.Sprint(i)})
+			g.NewNode([]string{l}, map[string]interface{}{"index": fmt.Sprint(i)}, nil)
 			data[fmt.Sprintf("%s:%d", l, i)] = struct{}{}
 		}
 	}
@@ -51,7 +51,7 @@ func TestHashNodeIndex(t *testing.T) {
 	data := make(map[string]struct{})
 	for _, l := range labels {
 		for i := 0; i < 10; i++ {
-			g.NewNode([]string{l}, map[string]interface{}{"index": fmt.Sprint(i)})
+			g.NewNode([]string{l}, map[string]interface{}{"index": fmt.Sprint(i)}, nil)
 			data[fmt.Sprintf("%s:%d", l, i)] = struct{}{}
 		}
 	}

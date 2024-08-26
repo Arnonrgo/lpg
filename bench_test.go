@@ -23,7 +23,7 @@ func BenchmarkPropNonExistsGraph(b *testing.B) {
 	g := NewGraph()
 	nodes := make([]*Node, 0)
 	for i := 0; i < 1000; i++ {
-		nodes = append(nodes, g.NewNode([]string{fmt.Sprint(i)}, map[string]interface{}{"a": "b", "c": "d", "e": "f", "g": "h"}))
+		nodes = append(nodes, g.NewNode([]string{fmt.Sprint(i)}, map[string]interface{}{"a": "b", "c": "d", "e": "f", "g": "h"}, nil))
 	}
 	labels := []string{"a", "b", "c", "d"}
 	for i := 0; i < len(nodes)-1; i++ {
@@ -41,9 +41,9 @@ func BenchmarkPropExistsGraph(b *testing.B) {
 	nodes := make([]*Node, 0)
 	for i := 0; i < 1000; i++ {
 		if i < 500 {
-			nodes = append(nodes, g.NewNode([]string{fmt.Sprint(i)}, map[string]interface{}{"a": "b", "c": "d", "e": "f", "g": "h"}))
+			nodes = append(nodes, g.NewNode([]string{fmt.Sprint(i)}, map[string]interface{}{"a": "b", "c": "d", "e": "f", "g": "h"}, nil))
 		} else {
-			nodes = append(nodes, g.NewNode([]string{fmt.Sprint(i)}, map[string]interface{}{"a": "b", "c": "d", "e": "f", "g": "h", "z": "zz"}))
+			nodes = append(nodes, g.NewNode([]string{fmt.Sprint(i)}, map[string]interface{}{"a": "b", "c": "d", "e": "f", "g": "h", "z": "zz"}, nil))
 		}
 	}
 	labels := []string{"a", "b", "c", "d"}
@@ -61,7 +61,7 @@ func BenchmarkDeleteEdge(b *testing.B) {
 	g := NewGraph()
 	nodes := make([]*Node, 0)
 	for i := 0; i < 1000; i++ {
-		nodes = append(nodes, g.NewNode([]string{fmt.Sprint(i)}, nil))
+		nodes = append(nodes, g.NewNode([]string{fmt.Sprint(i)}, nil, nil))
 	}
 	labels := []string{"a", "b", "c", "d"}
 	for i := 0; i < len(nodes)-1; i++ {
@@ -91,7 +91,7 @@ func BenchmarkFindEdgeLabel(b *testing.B) {
 	g := NewGraph()
 	nodes := make([]*Node, 0)
 	for i := 0; i < 10; i++ {
-		nodes = append(nodes, g.NewNode([]string{fmt.Sprint(i)}, nil))
+		nodes = append(nodes, g.NewNode([]string{fmt.Sprint(i)}, nil, nil))
 	}
 	labels := []string{"a", "b", "c", "d", "e", "f", "g", "h", "i"}
 	for i := 0; i < len(nodes)-1; i++ {
@@ -116,7 +116,7 @@ func BenchmarkFindEdgeProp(b *testing.B) {
 	g := NewGraph()
 	nodes := make([]*Node, 0)
 	for i := 0; i < 10; i++ {
-		nodes = append(nodes, g.NewNode([]string{fmt.Sprint(i)}, nil))
+		nodes = append(nodes, g.NewNode([]string{fmt.Sprint(i)}, nil, nil))
 	}
 	labels := []string{"a", "b", "c", "d", "e", "f", "g", "h", "i"}
 	for i := 0; i < len(nodes)-1; i++ {
@@ -142,7 +142,7 @@ func BenchmarkAddEdge(b *testing.B) {
 	g := NewGraph()
 	nodes := make([]*Node, 0)
 	for i := 0; i < 100_000; i++ {
-		nodes = append(nodes, g.NewNode([]string{fmt.Sprint(i)}, nil))
+		nodes = append(nodes, g.NewNode([]string{fmt.Sprint(i)}, nil, nil))
 	}
 	labels := []string{"a", "b", "c", "d", "e", "f", "g", "h", "i"}
 	b.ResetTimer()

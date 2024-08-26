@@ -57,7 +57,6 @@ func newGraphIndex() graphIndex {
 	}
 }
 
-// todo enforce string properies only
 // NodePropertyIndex sets up an index for the given node property (only support String properties
 func (g *graphIndex) NodePropertyIndex(propertyName string, graph *Graph, it IndexType) {
 	_, exists := g.nodeProperties[propertyName]
@@ -124,7 +123,10 @@ func (g *graphIndex) EdgesWithProperty(key string) EdgeIterator {
 
 func (g *graphIndex) addNodeToIndex(node *Node) {
 	g.nodesByLabel.Add(node)
-
+	node.contexts.Iter(func(k string) bool {
+		g.nodesByContext.add(k, node.id, node)
+		return false
+	})
 	for k, v := range node.properties {
 		index, found := g.nodeProperties[k]
 		if !found {
