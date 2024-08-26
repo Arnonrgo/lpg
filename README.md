@@ -29,7 +29,7 @@ Every edge contains:
 A `Graph` objects keeps an index of the nodes and edges included in
 it. Create a graph using `NewGraph` function:
 
-``` go
+```go
 g := lpg.NewGraph()
 // Create two nodes
 n1 := g.NewNode([]string{"label1"},map[string]any{"prop": "value1" }, nil)
@@ -40,7 +40,7 @@ edge:=g.NewEdge(n1,n2,"relatedTo",nil,nil)
 
 The LPG library uses iterators to address nodes and edges.
 
-``` go
+```go
 for nodes:=graph.GetNodes(); nodes.Next(); {
   node:=nodes.Node()
 }
@@ -66,7 +66,7 @@ for edges:=node1.GetEdges(lpg.AnyEdge); edges.Next(); {
 The graph indexes nodes by label, so access to nodes using labels is
 fast. You can add additional indexes on properties:
 
-```
+```go
 g := lpg.NewGraph()
 // Index all nodes with property 'prop'
 g.AddNodePropertyIndex("prop")
@@ -89,7 +89,7 @@ following example searches for the pattern that match
 
 and returns the head nodes for every matching path:
 
-```
+```go
 pattern := lpg.Pattern{ 
  // Node containing label 'label1'
  {
@@ -109,7 +109,7 @@ nodes, err:=pattern.FindNodes(g,nil)
 
 Variable length paths are supported:
 
-``` go
+```go
 pattern := lpg.Pattern{ 
  // Node containing label 'label1'
  {
@@ -124,8 +124,6 @@ pattern := lpg.Pattern{
  {
    Properties: map[string]interface{} {"prop":"value"},
  }}
-
-
 ```
 
 All graph nodes are under the `nodes` key as an array. The `n` key
