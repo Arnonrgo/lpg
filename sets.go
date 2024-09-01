@@ -25,7 +25,6 @@ type graphElement interface{ *Node | *Edge | any }
 // insertion/deletion, with iterator support
 type fastSet struct {
 	n *intmap.Map[int, *list.Element]
-	//m map[int]*list.Element
 	l *list.List
 }
 

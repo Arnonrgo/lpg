@@ -395,10 +395,35 @@ func BenchmarkItrNodeEdges(b *testing.B) {
 	_ = edge
 }
 
+func BenchmarkItrNodeEdgesLabel(b *testing.B) {
+	g := NewGraph()
+	nodes := make([]*Node, 0)
+	for i := 0; i < 100000; i++ {
+		nodes = append(nodes, g.NewNode([]string{fmt.Sprint(i)}, nil, nil))
+	}
+	labels := []string{"a", "b", "c", "d"}
+	for i := 0; i < len(nodes)-1; i++ {
+		for _, label := range labels {
+			g.NewEdge(nodes[i], nodes[i+1], label, nil, nil)
+		}
+	}
+	var edge *Edge
+
+	for n := 0; n < b.N; n++ {
+		for nodes := g.GetNodes(); nodes.Next(); {
+			node := nodes.Node()
+			for edges := node.GetEdgesWithAnyLabel(OutgoingEdge, NewStringSet("a", "c")); edges.Next(); {
+				edge = edges.Edge()
+			}
+		}
+	}
+	_ = edge
+}
+
 func BenchmarkItrEdgesByLabel(b *testing.B) {
 	g := NewGraph()
 	nodes := make([]*Node, 0)
-	for i := 0; i < 1000; i++ {
+	for i := 0; i < 10000; i++ {
 		nodes = append(nodes, g.NewNode([]string{fmt.Sprint(i)}, nil, nil))
 	}
 	labels := []string{"a", "b", "c", "d"}

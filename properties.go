@@ -24,21 +24,21 @@ type properties map[string]any
 
 // GetProperty returns the value for the key, and whether or not key
 // exists. p can be nil
-func (p *properties) getProperty(key string) (interface{}, bool) {
-	if *p == nil {
+func (p properties) getProperty(key string) (interface{}, bool) {
+	if p == nil {
 		return nil, false
 	}
-	x, ok := (*p)[key]
+	x, ok := (p)[key]
 	return x, ok
 }
 
 // ForEachProperty calls f for each property in p until f returns
 // false. Returns false if f returned false. p can be nil
-func (p *properties) forEachProperty(f func(string, interface{}) bool) bool {
-	if *p == nil {
+func (p properties) forEachProperty(f func(string, interface{}) bool) bool {
+	if p == nil {
 		return true
 	}
-	for k, v := range *p {
+	for k, v := range p {
 		if !f(k, v) {
 			return false
 		}
@@ -224,9 +224,9 @@ func (p properties) String() string {
 }
 
 // lookup proprs from source. allocate to target
-func (p *properties) clone(sourceGraph, targetGraph *Graph, cloneProperty func(string, interface{}) interface{}) properties {
-	ret := make(properties, len(*p))
-	for k, v := range *p {
+func (p properties) clone(sourceGraph, targetGraph *Graph, cloneProperty func(string, interface{}) interface{}) properties {
+	ret := make(properties, len(p))
+	for k, v := range p {
 		ret[k] = cloneProperty(k, v)
 	}
 	return ret

@@ -152,6 +152,14 @@ func (node *Node) Detach() {
 	node.graph.detachNode(node)
 }
 
+func (node *Node) OutgoingEdgeCount() int {
+	return node.outgoing.n
+}
+
+func (node *Node) IncomingEdgeCount() int {
+	return node.incoming.n
+}
+
 // String returns the string representation of the node
 func (node *Node) String() string {
 	labels := strings.Join(node.labels.Slice(), ":")
