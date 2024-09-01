@@ -317,8 +317,23 @@ func benchmarkItrNodesViaIndex(numNodes int, b *testing.B) {
 	_ = x
 }
 
-func BenchmarkItrNodesViaIndex1000(b *testing.B)  { benchmarkItrNodesViaIndex(1000, b) }
-func BenchmarkItrNodesViaIndex10000(b *testing.B) { benchmarkItrNodesViaIndex(10000, b) }
+func benchmarkItrNodesViaIndex2(numNodes int, b *testing.B) {
+	g := NewGraph()
+	var x *Node
+	for i := 0; i < numNodes; i++ {
+		g.NewNode([]string{"a", "b", "c"}, map[string]interface{}{"a": "b", "c": "d"}, nil)
+	}
+	for n := 0; n < b.N; n++ {
+		for nodes := g.index.nodesByLabel.IteratorAllLabels(NewStringSet("a", "c")); nodes.Next(); {
+			x = nodes.Node()
+		}
+	}
+	_ = x
+}
+
+func BenchmarkItrNodesViaIndex1000(b *testing.B)     { benchmarkItrNodesViaIndex(1000, b) }
+func BenchmarkItrNodesViaIndex10000(b *testing.B)    { benchmarkItrNodesViaIndex(10000, b) }
+func BenchmarkItrNodesViaIndex_2_10000(b *testing.B) { benchmarkItrNodesViaIndex2(10000, b) }
 
 func BenchmarkCreateEdge(b *testing.B) {
 	g := NewGraph()
@@ -327,10 +342,10 @@ func BenchmarkCreateEdge(b *testing.B) {
 		nodes = append(nodes, g.NewNode([]string{fmt.Sprint(i)}, nil, nil))
 	}
 	labels := []string{"a", "b", "c", "d"}
-
+	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		for i := 0; i < len(nodes)-1; i++ {
-			g.NewEdge(nodes[i], nodes[i+1], labels[i%4], nil, nil)
+			g.FastNewEdge(nodes[i], nodes[i+1], labels[i%4], nil, nil)
 		}
 	}
 }
@@ -375,6 +390,28 @@ func BenchmarkItrNodeEdges(b *testing.B) {
 			for edges := node.GetEdges(OutgoingEdge); edges.Next(); {
 				edge = edges.Edge()
 			}
+		}
+	}
+	_ = edge
+}
+
+func BenchmarkItrEdgesByLabel(b *testing.B) {
+	g := NewGraph()
+	nodes := make([]*Node, 0)
+	for i := 0; i < 1000; i++ {
+		nodes = append(nodes, g.NewNode([]string{fmt.Sprint(i)}, nil, nil))
+	}
+	labels := []string{"a", "b", "c", "d"}
+	for i := 0; i < len(nodes)-1; i++ {
+		for _, label := range labels {
+			g.NewEdge(nodes[i], nodes[i+1], label, nil, nil)
+		}
+	}
+	var edge *Edge
+
+	for n := 0; n < b.N; n++ {
+		for edges := g.GetEdgesWithAnyLabel(NewStringSet("a", "c")); edges.Next(); {
+			edge = edges.Edge()
 		}
 	}
 	_ = edge

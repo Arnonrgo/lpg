@@ -114,11 +114,8 @@ func (g *Graph) FastNewEdge(from, to *Node, label string, props map[string]any, 
 		to:         to,
 		label:      label,
 		id:         g.idBase,
-		contexts:   contexts,
+		contexts:   FastNewStringSet(contexts),
 		properties: properties(props),
-	}
-	if contexts == nil {
-		newEdge.contexts = NewStringSet()
 	}
 	g.idBase++
 	g.allEdges.add(newEdge, 0)

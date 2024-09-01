@@ -15,152 +15,164 @@
 package lpg
 
 import (
-	"github.com/dolthub/swiss"
+	"iter"
 	"sort"
 	"strings"
 )
 
 type StringSet struct {
-	M *swiss.Map[string, bool]
+	M *fastMap
+}
+
+// uses a pre existing stringset or creates a new one if empty
+func FastNewStringSet(set *StringSet) *StringSet {
+	if set == nil {
+		return NewStringSet()
+	}
+	return set
 }
 
 func NewStringSet(s ...string) *StringSet {
-	ret := swiss.NewMap[string, bool](uint32(len(s)))
-	newSet := StringSet{M: ret}
+	set := newFastMap()
 	for _, x := range s {
-		newSet.M.Put(x, true)
+		set.add(x, x)
 	}
-	return &newSet
+	return &StringSet{M: set}
 }
+
 func (set *StringSet) CloneN(n int) *StringSet {
-	ret := swiss.NewMap[string, bool](uint32(n))
-	i := 0
-	set.M.Iter(func(x string, _ bool) bool {
-		ret.Put(x, true)
-		i++
-		return i == n
-	})
-	return &StringSet{M: ret}
+	newSet := newFastMap()
+	current := set.M.l.Front()
+	for i := 0; i < n && current != nil; i++ {
+		newSet.add(current.Value.(string), current.Value.(string))
+		current = current.Next()
+	}
+	return &StringSet{M: newSet}
 }
 
 func (set *StringSet) Iter(f func(string) bool) {
 	if set == nil {
 		return
 	}
-	set.M.Iter(func(x string, _ bool) bool {
-		return f(x)
-	})
+	current := set.M.l.Front()
+	for current != nil {
+		if f(current.Value.(string)) {
+			break
+		}
+		current = current.Next()
+	}
 }
 
 func (set *StringSet) Clone() *StringSet {
-	newSet := NewStringSet()
-	set.M.Iter(func(x string, _ bool) bool {
-		newSet.M.Put(x, true)
-		return false
-	})
-	return newSet
+	return set.CloneN(set.M.size())
 }
 
 func (set *StringSet) IsEqual(s *StringSet) bool {
-	return set.M.Count() == s.M.Count() && set.HasAllSet(s)
+	return set.M.size() == s.M.size() && set.HasAllSet(s)
 }
 
 func (set *StringSet) Has(s string) bool {
-	return set.M.Has(s)
+	return set.M.has(s)
 }
 
 func (set *StringSet) HasAny(s ...string) bool {
 	for _, x := range s {
-		if set.M.Has(x) {
+		if set.M.has(x) {
 			return true
 		}
 	}
 	return false
 }
 func (set *StringSet) Intersect(s *StringSet) *StringSet {
-	newSet := StringSet{M: swiss.NewMap[string, bool](uint32(set.M.Count()))}
+	newSet := NewStringSet()
+	//newSet := StringSet{M: swiss.NewMap[string, bool](uint32(set.M.Count()))}
 	setToIterate := set
 	other := s
-	if set.M.Count() > s.M.Count() {
+	if set.M.size() > s.M.size() {
 		setToIterate = s
 		other = set
 	}
-	setToIterate.M.Iter(func(x string, _ bool) bool {
-		if other.M.Has(x) {
-			newSet.M.Put(x, true)
+	current := setToIterate.M.l.Front()
+	for current != nil {
+		if other.M.has(current.Value.(string)) {
+			newSet.M.add(current.Value.(string), current.Value.(string))
 		}
-		return false
-	})
-	return &newSet
+		current = current.Next()
+	}
+	return newSet
 }
 
 func (set *StringSet) HasAnySet(s *StringSet) bool {
 	res := false
-	s.M.Iter(func(x string, _ bool) bool {
-		if set.M.Has(x) {
+	current := set.M.l.Front()
+	for current != nil {
+		if s.M.has(current.Value.(string)) {
 			res = true
-			return true
+			break
 		}
-		return false
-	})
+		current = current.Next()
+	}
 	return res
 }
 
 func (set *StringSet) HasAll(s ...string) bool {
-	if len(s) == 0 || set.M.Count() < len(s) {
+	if len(s) == 0 || set.M.size() < len(s) {
 		return false
 	}
-	for _, x := range s {
-		if !set.M.Has(x) {
+	current := set.M.l.Front()
+	for current != nil {
+		if !set.M.has(current.Value.(string)) {
 			return false
 		}
+		current = current.Next()
 	}
 	return true
 }
 
 func (set *StringSet) HasAllSet(s *StringSet) bool {
-	if set.M.Count() < s.M.Count() {
+	if set.M.size() < s.M.size() {
 		return false
 	}
-	res := true
-	s.M.Iter(func(x string, _ bool) bool {
-		if !set.M.Has(x) {
-			res = false
-			return true
+	current := s.M.l.Front()
+	for current != nil {
+		if !set.M.has(current.Value.(string)) {
+			return false
 		}
-		return false
-	})
-	return res
+		current = current.Next()
+	}
+	return true
 }
 
 func (set *StringSet) Add(s ...string) *StringSet {
 	for _, x := range s {
-		set.M.Put(x, true)
+		set.M.add(x, x)
 	}
 	return set
 }
 
 func (set *StringSet) AddSet(s StringSet) *StringSet {
-	s.M.Iter(func(x string, _ bool) bool {
-		set.M.Put(x, true)
-		return false
-	})
+	current := s.M.l.Front()
+	for current != nil {
+		set.M.add(current.Value.(string), current.Value.(string))
+		current = current.Next()
+	}
 	return set
 }
 
 func (set *StringSet) Remove(s ...string) *StringSet {
 	for _, x := range s {
-		set.M.Delete(x)
+		set.M.remove(x)
 	}
 	return set
 }
 
 func (set *StringSet) Slice() []string {
-	ret := make([]string, 0, set.M.Count())
-	set.M.Iter(func(x string, _ bool) bool {
-		ret = append(ret, x)
-		return false
-	})
+	ret := make([]string, 0, set.M.size())
+	current := set.M.l.Front()
+	for current != nil {
+		ret = append(ret, current.Value.(string))
+		current = current.Next()
+	}
 	return ret
 }
 
@@ -178,23 +190,42 @@ func (set *StringSet) Len() int {
 	if set == nil {
 		return 0
 	}
-	return set.M.Count()
+	return set.M.size()
 }
 
 func (set *StringSet) Replace(other *StringSet, handleRemoved, handleAdded func(string)) {
-	set.M.Iter(func(x string, _ bool) bool {
-		if !other.M.Has(x) {
-			handleRemoved(x)
+	current := set.M.l.Front()
+	for current != nil {
+		if !other.M.has(current.Value.(string)) {
+			handleRemoved(current.Value.(string))
 		}
-		return false
-	})
-	newSet := swiss.NewMap[string, bool](uint32(other.M.Count()))
-	other.M.Iter(func(x string, _ bool) bool {
-		if !set.M.Has(x) {
-			handleAdded(x)
+		current = current.Next()
+	}
+
+	newSet := newFastMap()
+	current = other.M.l.Front()
+	for current != nil {
+		if !set.M.has(current.Value.(string)) {
+			handleAdded(current.Value.(string))
 		}
-		newSet.Put(x, true)
-		return false
-	})
+		newSet.add(current.Value.(string), true)
+		current = current.Next()
+	}
 	set.M = newSet
+}
+
+func (f *StringSet) Range() iter.Seq[string] {
+	return func(yield func(k string) bool) {
+		f.Iter(func(k string) bool {
+			return !yield(k)
+		})
+	}
+}
+
+// //	func (f *StringSet) Iterator() Iterator {
+// //		next, stop := iter.Pull[string](f.Range())
+// //		return &sIterator{next: next, stop: stop, set: f}
+// //	}
+func (f *StringSet) Iterator() Iterator {
+	return &listIterator{next: f.M.l.Front(), size: f.M.size()}
 }

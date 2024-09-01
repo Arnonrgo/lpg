@@ -123,10 +123,10 @@ func (g *graphIndex) EdgesWithProperty(key string) EdgeIterator {
 
 func (g *graphIndex) addNodeToIndex(node *Node) {
 	g.nodesByLabel.Add(node)
-	node.contexts.Iter(func(k string) bool {
-		g.nodesByContext.add(k, node.id, node)
-		return false
-	})
+	for context := range node.contexts.Range() {
+		g.nodesByContext.add(context, node.id, node)
+	}
+
 	for k, v := range node.properties {
 		index, found := g.nodeProperties[k]
 		if !found {
@@ -139,11 +139,9 @@ func (g *graphIndex) addNodeToIndex(node *Node) {
 
 func (g *graphIndex) removeNodeFromIndex(node *Node) {
 	g.nodesByLabel.Remove(node)
-
-	node.contexts.Iter(func(k string) bool {
-		g.nodesByContext.remove(k, node.id)
-		return false
-	})
+	for context := range node.contexts.Range() {
+		g.nodesByContext.remove(context, node.id)
+	}
 
 	for k, v := range node.properties {
 		index, found := g.nodeProperties[k]
@@ -180,10 +178,9 @@ func (g *graphIndex) EdgePropertyIndex(propertyName string, graph *Graph, it Ind
 }
 
 func (g *graphIndex) addEdgeToIndex(edge *Edge) {
-	edge.contexts.Iter(func(k string) bool {
-		g.edgesByContext.add(k, edge.id, edge)
-		return false
-	})
+	for context := range edge.contexts.Range() {
+		g.edgesByContext.add(context, edge.id, edge)
+	}
 	g.edgesByLabel.add(edge.label, edge.id, edge)
 	for k, v := range edge.properties {
 		index, found := g.edgeProperties[k]
@@ -196,10 +193,10 @@ func (g *graphIndex) addEdgeToIndex(edge *Edge) {
 }
 
 func (g *graphIndex) removeEdgeFromIndex(edge *Edge) {
-	edge.contexts.Iter(func(k string) bool {
-		g.edgesByContext.remove(k, edge.id)
-		return false
-	})
+	for context := range edge.contexts.Range() {
+		g.edgesByContext.remove(context, edge.id)
+	}
+
 	g.edgesByLabel.remove(edge.label, edge.id)
 	for k, v := range edge.properties {
 		index, found := g.edgeProperties[k]
@@ -226,13 +223,12 @@ func (g *graphIndex) GetIteratorForEdgeProperty(key string, value string) (EdgeI
 func (g *graphIndex) edgeIteratorAllContexts(contexts *StringSet) EdgeIterator {
 	// Find the smallest map element, iterate that
 	var itr Iterator
-	contexts.Iter(func(label string) bool {
-		litr := g.edgesByContext.find(label)
+	for context := range contexts.Range() {
+		litr := g.edgesByContext.find(context)
 		if itr == nil || itr.MaxSize() < litr.MaxSize() {
 			itr = litr
 		}
-		return false
-	})
+	}
 
 	flt := &filterIterator{
 		itr: withSize(itr, itr.MaxSize()),

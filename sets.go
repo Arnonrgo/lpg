@@ -19,12 +19,69 @@ import (
 	"github.com/kamstrup/intmap"
 )
 
+type graphElement interface{ *Node | *Edge | any }
+
 // A fastSet is a set of objects with constant-time
 // insertion/deletion, with iterator support
 type fastSet struct {
 	n *intmap.Map[int, *list.Element]
 	//m map[int]*list.Element
 	l *list.List
+}
+
+type fastMap struct {
+	n map[string]*list.Element
+	l *list.List
+}
+
+func newFastMap() *fastMap {
+	return &fastMap{
+		n: make(map[string]*list.Element),
+		l: list.New(),
+	}
+}
+func (f *fastMap) init() {
+	f.n = make(map[string]*list.Element)
+	f.l.Init()
+}
+
+func (f *fastMap) size() int {
+	return len(f.n)
+}
+func (f *fastMap) add(id string, item interface{}) bool {
+	_, exists := f.n[id]
+	if exists {
+		return false
+	}
+	el := f.l.PushBack(item)
+	f.n[id] = el
+	return true
+}
+func (f *fastMap) get(id string) (interface{}, bool) {
+	el, ok := f.n[id]
+	if !ok {
+		return nil, false
+	}
+	return el.Value, true
+}
+
+func (f *fastMap) remove(id string) bool {
+	el, ext := f.n[id]
+	if !ext {
+		return false
+	}
+	delete(f.n, id)
+	f.l.Remove(el)
+	return true
+}
+
+func (f *fastMap) has(id string) bool {
+	_, ret := f.n[id]
+	return ret
+}
+
+func (f *fastMap) iterator() Iterator {
+	return &listIterator{next: f.l.Front(), size: f.size()}
 }
 
 func newFastSet() *fastSet {
@@ -43,7 +100,6 @@ func (f *fastSet) init() {
 
 func (f *fastSet) size() int {
 	return f.l.Len()
-	//return len(f.m)
 }
 
 // Add a new item. Returns true if added
@@ -53,7 +109,7 @@ func (f *fastSet) add(id int, item interface{}) bool {
 		return false
 	}
 	el := f.l.PushBack(item)
-	f.n.PutIfNotExists(id, el)
+	f.n.Put(id, el)
 	return true
 }
 

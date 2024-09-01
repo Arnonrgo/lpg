@@ -16,71 +16,11 @@ package lpg
 
 import (
 	"fmt"
-	"github.com/dolthub/swiss"
 	"strings"
 )
 
+// / swiss maps (at least the current lib) is not as efficient as built-in maps for small number of keys (like properties)
 type properties map[string]any
-type props struct {
-	values *swiss.Map[string, any]
-}
-
-func newPropFromMap(m map[string]interface{}) *props {
-	p := props{
-		values: swiss.NewMap[string, any](uint32(len(m))),
-	}
-	for k, v := range m {
-		p.values.Put(k, v)
-	}
-	return &p
-}
-
-func newProps() *props {
-	return &props{
-		values: swiss.NewMap[string, any](10),
-	}
-}
-func (p *props) getProp(key string) (interface{}, bool) {
-	return p.values.Get(key)
-}
-
-func (p *props) forEachProp(f func(string, interface{}) bool) bool {
-	result := true
-	p.values.Iter(
-		func(key string, value any) bool {
-			if !f(key, value) {
-				result = false
-				return true //stop
-			}
-			return false
-		})
-	return result
-}
-
-func (p props) String() string {
-	elements := make([]string, 0, p.values.Count())
-	p.values.Iter(func(k string, v any) bool {
-		if _, node := v.(*Node); node {
-			return false
-		}
-		if _, edge := v.(*Edge); edge {
-			return false
-		}
-		elements = append(elements, fmt.Sprintf("%s:%v", k, v))
-		return false
-	})
-	return "{" + strings.Join(elements, " ") + "}"
-}
-
-// lookup proprs from source. allocate to target
-func (p *props) clone(sourceGraph, targetGraph *Graph, cloneProperty func(string, interface{}) interface{}) *props {
-	clone := swiss.NewMap[string, any](uint32(p.values.Count()))
-	p.values.Iter(func(k string, v any) bool {
-		clone.Put(k, cloneProperty(k, v))
-		return false
-	})
-	return &props{values: clone}
-}
 
 // GetProperty returns the value for the key, and whether or not key
 // exists. p can be nil

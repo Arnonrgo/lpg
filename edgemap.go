@@ -25,12 +25,10 @@ type edgeLabelList struct {
 
 // An edgeMap stores edges indexed by edge label
 type edgeMap struct {
-	// list of edgeLabelList
 	edgeLabelLists *list.List
-	// Map of labels -> *edgeLabelList
-	labelMap map[string]*list.Element
-	only     *Edge
-	n        int
+	labelMap       map[string]*list.Element
+	only           *Edge
+	n              int
 }
 
 func (em *edgeMap) lazyInit() {

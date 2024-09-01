@@ -31,16 +31,14 @@ type setTree[V ordered, I Item] struct {
 
 func (s *setTree[V, I]) add(key V, id int, item I) {
 	if s.tree == nil {
-		//s.tree = btree.NewWith(16, ComparePropertyValue)
-		s.tree = btree.NewMap[V, *fastSet](16)
+		s.tree = btree.NewMap[V, *fastSet](50)
 	}
 	v, found := s.tree.Get(key)
 	if !found {
 		v = newFastSet()
 		s.tree.Set(key, v)
 	}
-	set := v
-	set.add(id, item)
+	v.add(id, item)
 }
 
 func (s *setTree[V, I]) remove(key V, id int) {
@@ -51,9 +49,8 @@ func (s *setTree[V, I]) remove(key V, id int) {
 	if !found {
 		return
 	}
-	set := v
-	set.remove(id)
-	if set.size() == 0 {
+	v.remove(id)
+	if v.size() == 0 {
 		s.tree.Delete(key)
 	}
 }
@@ -67,9 +64,7 @@ func (s *setTree[V, I]) find(key V) Iterator {
 	if !found {
 		return emptyIterator{}
 	}
-	set := v
-	itr := set.iterator()
-	return withSize(itr, set.size())
+	return withSize(v.iterator(), v.size())
 }
 
 func (s *setTree[V, I]) valueItr() Iterator {
@@ -82,9 +77,7 @@ func (s *setTree[V, I]) valueItr() Iterator {
 			if !treeItr.Next() {
 				return nil
 			}
-			set := treeItr.Value()
-			itr := set.iterator()
-			return withSize(itr, set.size())
+			return withSize(treeItr.Value().iterator(), treeItr.Value().size())
 		},
 	}
 }

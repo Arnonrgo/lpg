@@ -46,7 +46,7 @@ func (nm *NodeMap) Replace(node *Node, oldLabels, newLabels *StringSet) {
 	}
 	var set *fastSet
 	// Process removed labels
-	oldLabels.M.Iter(func(label string, _ bool) bool {
+	oldLabels.Iter(func(label string) bool {
 		if !newLabels.Has(label) {
 			v, found := nm.m.Get(label)
 			if !found {
@@ -62,7 +62,7 @@ func (nm *NodeMap) Replace(node *Node, oldLabels, newLabels *StringSet) {
 	})
 
 	// Process added labels
-	newLabels.M.Iter(func(label string, _ bool) bool {
+	newLabels.Iter(func(label string) bool {
 		if !oldLabels.Has(label) {
 			v, found := nm.m.Get(label)
 			if !found {
@@ -84,7 +84,7 @@ func (nm *NodeMap) Add(node *Node) {
 	}
 
 	var set *fastSet
-	node.labels.M.Iter(func(label string, _ bool) bool {
+	node.labels.Iter(func(label string) bool {
 		v, found := nm.m.Get(label)
 		if !found {
 			set = newFastSet()
@@ -103,7 +103,7 @@ func (nm NodeMap) Remove(node *Node) {
 		return
 	}
 	var set *fastSet
-	node.labels.M.Iter(func(label string, _ bool) bool {
+	node.labels.Iter(func(label string) bool {
 		v, found := nm.m.Get(label)
 		if !found {
 			return false
@@ -190,7 +190,7 @@ func (nm NodeMap) IteratorAllLabels(labels *StringSet) NodeIterator {
 	// Find the smallest map element, iterate that
 	var minSet *fastSet
 	fnd := true
-	labels.M.Iter(func(label string, _ bool) bool {
+	labels.Iter(func(label string) bool {
 		v, found := nm.m.Get(label)
 		if !found {
 			fnd = false
