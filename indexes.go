@@ -17,6 +17,7 @@ package lpg
 import (
 	"errors"
 	"fmt"
+	"strconv"
 )
 
 type Item interface {
@@ -38,22 +39,24 @@ const (
 )
 
 type graphIndex struct {
-	nodesByLabel   NodeMap
-	nodesByContext index[string, *Node]
-	edgesByLabel   index[string, *Edge]
-	edgesByContext index[string, *Edge]
-	nodeProperties map[string]index[string, *Node]
-	edgeProperties map[string]index[string, *Edge]
+	nodesByLabel     NodeMap
+	nodesByContext   index[string, *Node]
+	edgesByLabel     index[string, *Edge]
+	edgesFromContext index[string, *Edge]
+	edgesToContext   index[string, *Edge]
+	nodeProperties   map[string]index[string, *Node]
+	edgeProperties   map[string]index[string, *Edge]
 }
 
 func newGraphIndex() graphIndex {
 	return graphIndex{
-		nodesByLabel:   *NewNodeMap(),
-		edgesByLabel:   &setTree[string, *Edge]{},
-		nodesByContext: &setTree[string, *Node]{},
-		edgesByContext: &setTree[string, *Edge]{},
-		nodeProperties: make(map[string]index[string, *Node]),
-		edgeProperties: make(map[string]index[string, *Edge]),
+		nodesByLabel:     *NewNodeMap(),
+		edgesByLabel:     &setTree[string, *Edge]{},
+		nodesByContext:   &setTree[string, *Node]{},
+		edgesFromContext: &setTree[string, *Edge]{},
+		edgesToContext:   &setTree[string, *Edge]{},
+		nodeProperties:   make(map[string]index[string, *Node]),
+		edgeProperties:   make(map[string]index[string, *Edge]),
 	}
 }
 
@@ -179,7 +182,8 @@ func (g *graphIndex) EdgePropertyIndex(propertyName string, graph *Graph, it Ind
 
 func (g *graphIndex) addEdgeToIndex(edge *Edge) {
 	for context := range edge.contexts.Range() {
-		g.edgesByContext.add(context, edge.id, edge)
+		g.edgesFromContext.add(strconv.Itoa(edge.from.id)+context, edge.id, edge)
+		g.edgesToContext.add(strconv.Itoa(edge.to.id)+context, edge.id, edge)
 	}
 	g.edgesByLabel.add(edge.label, edge.id, edge)
 	for k, v := range edge.properties {
@@ -194,7 +198,8 @@ func (g *graphIndex) addEdgeToIndex(edge *Edge) {
 
 func (g *graphIndex) removeEdgeFromIndex(edge *Edge) {
 	for context := range edge.contexts.Range() {
-		g.edgesByContext.remove(context, edge.id)
+		g.edgesFromContext.remove(strconv.Itoa(edge.from.id)+context, edge.id)
+		g.edgesToContext.remove(strconv.Itoa(edge.to.id)+context, edge.id)
 	}
 
 	g.edgesByLabel.remove(edge.label, edge.id)
@@ -220,22 +225,23 @@ func (g *graphIndex) GetIteratorForEdgeProperty(key string, value string) (EdgeI
 	return edgeIterator{itr}, nil
 }
 
-func (g *graphIndex) edgeIteratorAllContexts(contexts *StringSet) EdgeIterator {
-	// Find the smallest map element, iterate that
-	var itr Iterator
-	for context := range contexts.Range() {
-		litr := g.edgesByContext.find(context)
-		if itr == nil || itr.MaxSize() < litr.MaxSize() {
-			itr = litr
-		}
-	}
-
-	flt := &filterIterator{
-		itr: withSize(itr, itr.MaxSize()),
-		filter: func(item interface{}) bool {
-			oedge := item.(*Edge)
-			return contexts.Has(oedge.label)
-		},
-	}
-	return edgeIterator{flt}
-}
+//
+//func (g *graphIndex) edgeIteratorAllContexts(contexts *StringSet) EdgeIterator {
+//	// Find the smallest map element, iterate that
+//	var itr Iterator
+//	for context := range contexts.Range() {
+//		litr := g.edgesFromContext.find(context)
+//		if itr == nil || itr.MaxSize() < litr.MaxSize() {
+//			itr = litr
+//		}
+//	}
+//
+//	flt := &filterIterator{
+//		itr: withSize(itr, itr.MaxSize()),
+//		filter: func(item interface{}) bool {
+//			oedge := item.(*Edge)
+//			return contexts.Has(oedge.label)
+//		},
+//	}
+//	return edgeIterator{flt}
+//}

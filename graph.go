@@ -18,6 +18,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/kamstrup/intmap"
+	"strconv"
 )
 
 // A Graph is a labeled property graph containing nodes, and directed
@@ -247,10 +248,22 @@ func (g *Graph) ProcessNodeWithAnyContext(contexts *StringSet, handler func(*Nod
 
 }
 
-func (g *Graph) ProcessEdgesWithAnyContext(contexts *StringSet, handler func(*Edge)) {
+func (g *Graph) ProcessEdgesWithAnyContext(nodeId int, contexts *StringSet, dir EdgeDir, handler func(*Edge)) {
 	seen := intmap.NewSet[int](10)
+	id := strconv.Itoa(nodeId)
 	contexts.Iter(func(context string) bool {
-		itr := g.index.edgesByContext.find(context)
+		var itr Iterator
+		var key = id + context
+		switch dir {
+		case IncomingEdge:
+			itr = g.index.edgesToContext.find(key)
+		case OutgoingEdge:
+			itr = g.index.edgesFromContext.find(key)
+		case AnyEdge:
+			it1 := g.index.edgesToContext.find(key)
+			it2 := g.index.edgesFromContext.find(key)
+			itr = MultiIterator(it1, it2)
+		}
 		if itr == nil {
 			return false
 		}
@@ -613,9 +626,11 @@ func (g *Graph) setEdgeLabel(edge *Edge, label string) {
 
 func (g *Graph) setEdgeContext(edge *Edge, context *StringSet) {
 	edge.contexts.Replace(context, func(s string) {
-		g.index.edgesByContext.remove(s, edge.id)
+		g.index.edgesFromContext.remove(strconv.Itoa(edge.from.id)+s, edge.id)
+		g.index.edgesToContext.remove(strconv.Itoa(edge.to.id)+s, edge.id)
 	}, func(s string) {
-		g.index.edgesByContext.add(s, edge.id, edge)
+		g.index.edgesFromContext.add(strconv.Itoa(edge.from.id)+s, edge.id, edge)
+		g.index.edgesToContext.add(strconv.Itoa(edge.to.id)+s, edge.id, edge)
 	})
 }
 

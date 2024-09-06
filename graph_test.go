@@ -59,21 +59,15 @@ func TestContexts(t *testing.T) {
 	g.NewEdge(nodes[i], nodes[i+1], "e", nil, NewStringSet("something", "whatever"))
 
 	edges := make([]*Edge, 0)
-	g.ProcessEdgesWithAnyContext(NewStringSet("something"), func(e *Edge) {
+	g.ProcessEdgesWithAnyContext(nodes[i].GetID(), NewStringSet("something"), OutgoingEdge, func(e *Edge) {
 		edges = append(edges, e)
 	})
 	assert.Equal(t, 1, len(edges))
 	edges = make([]*Edge, 0)
-	g.ProcessEdgesWithAnyContext(NewStringSet("default", "whatever"), func(e *Edge) {
+	g.ProcessEdgesWithAnyContext(nodes[i].GetID(), NewStringSet("default", "whatever"), IncomingEdge, func(e *Edge) {
 		edges = append(edges, e)
 	})
-	assert.Equal(t, len(nodes)-1, len(edges))
-	edges = make([]*Edge, 0)
-	g.ProcessEdgesWithAnyContext(NewStringSet("default"), func(e *Edge) {
-		edges = append(edges, e)
-
-	})
-	assert.Equal(t, len(nodes)-2, len(edges))
+	assert.Equal(t, 1, len(edges))
 
 }
 
@@ -373,7 +367,7 @@ func BenchmarkItrAllEdge(b *testing.B) {
 func BenchmarkItrNodeEdges(b *testing.B) {
 	g := NewGraph()
 	nodes := make([]*Node, 0)
-	for i := 0; i < 1000; i++ {
+	for i := 0; i < 100_000; i++ {
 		nodes = append(nodes, g.NewNode([]string{fmt.Sprint(i)}, nil, nil))
 	}
 	labels := []string{"a", "b", "c", "d"}
@@ -398,7 +392,7 @@ func BenchmarkItrNodeEdges(b *testing.B) {
 func BenchmarkItrNodeEdgesLabel(b *testing.B) {
 	g := NewGraph()
 	nodes := make([]*Node, 0)
-	for i := 0; i < 100000; i++ {
+	for i := 0; i < 100_000; i++ {
 		nodes = append(nodes, g.NewNode([]string{fmt.Sprint(i)}, nil, nil))
 	}
 	labels := []string{"a", "b", "c", "d"}
@@ -412,7 +406,7 @@ func BenchmarkItrNodeEdgesLabel(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		for nodes := g.GetNodes(); nodes.Next(); {
 			node := nodes.Node()
-			for edges := node.GetEdgesWithAnyLabel(OutgoingEdge, NewStringSet("a", "c")); edges.Next(); {
+			for edges := node.GetEdgesWithLabel(OutgoingEdge, "a"); edges.Next(); {
 				edge = edges.Edge()
 			}
 		}
@@ -423,7 +417,7 @@ func BenchmarkItrNodeEdgesLabel(b *testing.B) {
 func BenchmarkItrEdgesByLabel(b *testing.B) {
 	g := NewGraph()
 	nodes := make([]*Node, 0)
-	for i := 0; i < 10000; i++ {
+	for i := 0; i < 100_000; i++ {
 		nodes = append(nodes, g.NewNode([]string{fmt.Sprint(i)}, nil, nil))
 	}
 	labels := []string{"a", "b", "c", "d"}

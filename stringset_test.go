@@ -3,6 +3,8 @@ package lpg
 import (
 	"fmt"
 	"github.com/stretchr/testify/assert"
+	"math/rand/v2"
+	"strconv"
 	"testing"
 )
 
@@ -78,7 +80,31 @@ func BenchmarkCloneSet(b *testing.B) {
 
 func BenchmarkTakeN(b *testing.B) {
 	set := NewStringSet("a", "b", "c", "e", "f", "g", "h")
+	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		set.CloneN(2)
+	}
+}
+
+func BenchmarkAdd(b *testing.B) {
+	set := NewStringSet()
+	for i := 0; i < b.N; i++ {
+		rnd := rand.IntN(100000)
+		srnd := fmt.Sprintf("%d", rnd)
+		set.Add(srnd)
+	}
+}
+func BenchmarkGetSet(b *testing.B) {
+	set := NewStringSet()
+	for i := 0; i < 100000; i++ {
+		rnd := rand.IntN(100000)
+		srnd := fmt.Sprintf("%d", rnd)
+		set.Add(srnd)
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		rnd := rand.IntN(100000)
+		srnd := strconv.Itoa(rnd)
+		set.Has(srnd)
 	}
 }
