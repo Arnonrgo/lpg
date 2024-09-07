@@ -75,6 +75,10 @@ func (node *Node) SetContexts(contexts *StringSet) {
 	node.graph.setNodeContexts(node, contexts)
 }
 
+func (node *Node) GetContexts() {
+	node.contexts.Clone()
+}
+
 // HasLabel returns true if the node has the given label
 func (node *Node) HasLabel(s string) bool { return node.labels.Has(s) }
 
