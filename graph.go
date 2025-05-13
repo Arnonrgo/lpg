@@ -17,8 +17,9 @@ package lpg
 import (
 	"errors"
 	"fmt"
-	"github.com/kamstrup/intmap"
 	"strconv"
+
+	"github.com/kamstrup/intmap"
 )
 
 // A Graph is a labeled property graph containing nodes, and directed
@@ -325,7 +326,7 @@ func (g *Graph) FindNodes(allLabels *StringSet, properties map[string]interface{
 		}
 	}
 
-	nodeFilterFunc := GetNodeFilterFunc(allLabels, properties)
+	nodeFilterFunc := GetNodeFilterFunc(allLabels, nil, properties, false)
 	// Iterate the minimum iterator, with a filter
 	if nodesByLabelSize != -1 && (minPropertySize == -1 || minPropertySize > nodesByLabelSize) {
 		// Iterate by node label
@@ -436,15 +437,30 @@ func (g *Graph) FindEdges(label string, properties map[string]interface{}) (Edge
 }
 
 // GetNodeFilterFunc returns a filter function that can be used to select
-// nodes that have all the specified labels, with correct property
-// values
-func GetNodeFilterFunc(labels *StringSet, properties map[string]interface{}) func(*Node) bool {
+// nodes that have all the specified labels, and correct property values.
+// If matchAnyContext is true, the node must have at least one of the specified contexts.
+// If matchAnyContext is false (default), the node must have all specified contexts.
+// If labels, contexts, or properties are nil or empty, they are not used for filtering.
+func GetNodeFilterFunc(labels *StringSet, contexts *StringSet, properties map[string]interface{}, matchAnyContext bool) func(*Node) bool {
 	return func(node *Node) (cmp bool) {
 		if labels != nil && labels.Len() > 0 {
 			if !node.labels.HasAllSet(labels) {
 				return false
 			}
 		}
+
+		if contexts != nil && contexts.Len() > 0 {
+			if matchAnyContext {
+				if !contexts.HasAnySet(node.contexts) { // Check if pattern's contexts has any overlap with node's contexts
+					return false
+				}
+			} else {
+				if !node.contexts.HasAllSet(contexts) { // "Match All" logic
+					return false
+				}
+			}
+		}
+
 		defer func() {
 			if r := recover(); r != nil {
 				cmp = false

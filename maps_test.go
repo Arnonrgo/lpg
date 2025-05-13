@@ -61,3 +61,35 @@ func TestNodeMap(t *testing.T) {
 		}
 	}
 }
+
+const benchmarkMapSize = 1000
+
+func BenchmarkFastMapAdd(b *testing.B) {
+	keys := make([]string, benchmarkMapSize)
+	for i := 0; i < benchmarkMapSize; i++ {
+		keys[i] = fmt.Sprintf("key%d", i)
+	}
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		fm := newFastMap()
+		for i := 0; i < benchmarkMapSize; i++ {
+			fm.add(keys[i], keys[i]) // Add N items
+		}
+	}
+}
+
+func BenchmarkFastMapHas(b *testing.B) {
+	fm := newFastMap()
+	keys := make([]string, benchmarkMapSize)
+	for i := 0; i < benchmarkMapSize; i++ {
+		keys[i] = fmt.Sprintf("key%d", i)
+		fm.add(keys[i], keys[i])
+	}
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		for i := 0; i < benchmarkMapSize; i++ {
+			fm.has(keys[i])       // Check existing
+			fm.has("nonexistent") // Check non-existing
+		}
+	}
+}

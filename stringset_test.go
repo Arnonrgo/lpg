@@ -2,10 +2,11 @@ package lpg
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"math/rand/v2"
 	"strconv"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestStringSet_HasAny(t *testing.T) {
@@ -94,6 +95,7 @@ func BenchmarkAdd(b *testing.B) {
 		set.Add(srnd)
 	}
 }
+
 func BenchmarkGetSet(b *testing.B) {
 	set := NewStringSet()
 	for i := 0; i < 100000; i++ {
@@ -106,5 +108,33 @@ func BenchmarkGetSet(b *testing.B) {
 		rnd := rand.IntN(100000)
 		srnd := strconv.Itoa(rnd)
 		set.Has(srnd)
+	}
+}
+
+const benchmarkSetSize = 100
+
+func BenchmarkNewStringSet(b *testing.B) {
+	items := make([]string, benchmarkSetSize)
+	for i := 0; i < benchmarkSetSize; i++ {
+		items[i] = fmt.Sprintf("item%d", i)
+	}
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		_ = NewStringSet(items...)
+	}
+}
+
+func BenchmarkStringSetHas(b *testing.B) {
+	items := make([]string, benchmarkSetSize)
+	for i := 0; i < benchmarkSetSize; i++ {
+		items[i] = fmt.Sprintf("item%d", i)
+	}
+	set := NewStringSet(items...)
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		for i := 0; i < benchmarkSetSize; i++ {
+			set.Has(items[i])      // Check existing
+			set.Has("nonexistent") // Check non-existing
+		}
 	}
 }

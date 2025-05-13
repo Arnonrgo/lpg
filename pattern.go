@@ -40,9 +40,15 @@ type PatternSymbol struct {
 }
 
 // A PatternItem can be a node or an edge element of a pattern
+// It specifies the labels, contexts (for nodes), and properties to match.
+// For edges, it also defines the direction and cardinality (Min, Max hops).
+// The MatchAnyContext field dictates how contexts are matched: if false (default),
+// all specified contexts must be present; if true, at least one must be present.
 type PatternItem struct {
-	Labels     *StringSet
-	Properties map[string]interface{}
+	Labels          *StringSet
+	Contexts        *StringSet // Contexts to match for node items. Ignored for edge items.
+	MatchAnyContext bool       // If true, match if any context in Contexts is present. If false (default), all must be present.
+	Properties      map[string]interface{}
 	// Min=-1 and Max=-1 for variable length
 	Min int
 	Max int
@@ -61,7 +67,7 @@ func (p PatternItem) getEdgeFilter() func(*Edge) bool {
 }
 
 func (p PatternItem) getNodeFilter() func(*Node) bool {
-	return GetNodeFilterFunc(p.Labels, p.Properties)
+	return GetNodeFilterFunc(p.Labels, p.Contexts, p.Properties, p.MatchAnyContext)
 }
 
 // Returns the set of nodes constraining the pattern item. That is,

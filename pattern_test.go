@@ -1073,3 +1073,225 @@ func benchmarkPathLengthTwoPatternCircleGraph(b *testing.B, withIndex bool) {
 		pat.Run(graph, symbols, acc)
 	}
 }
+
+func TestPatternWithContexts(t *testing.T) {
+	graph := NewGraph()
+
+	// Nodes with contexts
+	node1 := graph.NewNode([]string{"Person"}, map[string]interface{}{"name": "Alice"}, NewStringSet("ctxA"))
+	node2 := graph.NewNode([]string{"Person"}, map[string]interface{}{"name": "Bob"}, NewStringSet("ctxA", "ctxB"))
+	node3 := graph.NewNode([]string{"Location"}, map[string]interface{}{"city": "London"}, NewStringSet("ctxB"))
+	node4 := graph.NewNode([]string{"Person"}, map[string]interface{}{"name": "Charlie"}, NewStringSet("ctxC"))
+	node5 := graph.NewNode([]string{"Document"}, map[string]interface{}{"title": "DocX"}, NewStringSet("ctxD", "ctxE"))
+	node6 := graph.NewNode([]string{"Document"}, map[string]interface{}{"title": "DocY"}, NewStringSet("ctxE"))
+
+	// Test Case 1: Match all - single context (MatchAnyContext = false by default)
+	pat1 := Pattern{
+		{Name: "n1", Contexts: NewStringSet("ctxA")},
+	}
+	symbols1 := make(map[string]*PatternSymbol)
+	acc1 := &DefaultMatchAccumulator{}
+	if err := pat1.Run(graph, symbols1, acc1); err != nil {
+		t.Errorf("TestPatternWithContexts Case 1 (MatchAll): Run failed: %v", err)
+	}
+	if len(acc1.Paths) != 2 { // Alice (ctxA), Bob (ctxA, ctxB)
+		t.Errorf("TestPatternWithContexts Case 1 (MatchAll): Expected 2 paths, got %d. Paths: %v", len(acc1.Paths), acc1.Paths)
+	}
+
+	// Test Case 2: Match all - multiple contexts (MatchAnyContext = false by default)
+	pat2 := Pattern{
+		{Name: "n2", Contexts: NewStringSet("ctxA", "ctxB")},
+	}
+	symbols2 := make(map[string]*PatternSymbol)
+	acc2 := &DefaultMatchAccumulator{}
+	if err := pat2.Run(graph, symbols2, acc2); err != nil {
+		t.Errorf("TestPatternWithContexts Case 2 (MatchAll): Run failed: %v", err)
+	}
+	if len(acc2.Paths) != 1 { // Only Bob (ctxA, ctxB)
+		t.Errorf("TestPatternWithContexts Case 2 (MatchAll): Expected 1 path, got %d. Paths: %v", len(acc2.Paths), acc2.Paths)
+	} else if acc2.Paths[0].GetNode(0) != node2 {
+		t.Errorf("TestPatternWithContexts Case 2 (MatchAll): Expected node Bob, got %v", acc2.Paths[0].GetNode(0))
+	}
+
+	// Test Case 3: Match all - label and context (MatchAnyContext = false by default)
+	pat3 := Pattern{
+		{Name: "n3", Labels: NewStringSet("Location"), Contexts: NewStringSet("ctxB")},
+	}
+	symbols3 := make(map[string]*PatternSymbol)
+	acc3 := &DefaultMatchAccumulator{}
+	if err := pat3.Run(graph, symbols3, acc3); err != nil {
+		t.Errorf("TestPatternWithContexts Case 3 (MatchAll): Run failed: %v", err)
+	}
+	if len(acc3.Paths) != 1 { // Only London (Location, ctxB)
+		t.Errorf("TestPatternWithContexts Case 3 (MatchAll): Expected 1 path, got %d. Paths: %v", len(acc3.Paths), acc3.Paths)
+	} else if acc3.Paths[0].GetNode(0) != node3 {
+		t.Errorf("TestPatternWithContexts Case 3 (MatchAll): Expected node London, got %v", acc3.Paths[0].GetNode(0))
+	}
+
+	// Test Case 4: Match all - context that does not match (MatchAnyContext = false by default)
+	pat4 := Pattern{
+		{Name: "n4", Contexts: NewStringSet("ctxDoesNotExist")},
+	}
+	symbols4 := make(map[string]*PatternSymbol)
+	acc4 := &DefaultMatchAccumulator{}
+	if err := pat4.Run(graph, symbols4, acc4); err != nil {
+		t.Errorf("TestPatternWithContexts Case 4 (MatchAll): Run failed: %v", err)
+	}
+	if len(acc4.Paths) != 0 {
+		t.Errorf("TestPatternWithContexts Case 4 (MatchAll): Expected 0 paths, got %d", len(acc4.Paths))
+	}
+
+	// Test Case 5: Match all - properties and context (MatchAnyContext = false by default)
+	pat5 := Pattern{
+		{Name: "n5", Properties: map[string]interface{}{"name": "Alice"}, Contexts: NewStringSet("ctxA")},
+	}
+	symbols5 := make(map[string]*PatternSymbol)
+	acc5 := &DefaultMatchAccumulator{}
+	if err := pat5.Run(graph, symbols5, acc5); err != nil {
+		t.Errorf("TestPatternWithContexts Case 5 (MatchAll): Run failed: %v", err)
+	}
+	if len(acc5.Paths) != 1 { // Only Alice (name:Alice, ctxA)
+		t.Errorf("TestPatternWithContexts Case 5 (MatchAll): Expected 1 path, got %d. Paths: %v", len(acc5.Paths), acc5.Paths)
+	} else if acc5.Paths[0].GetNode(0) != node1 {
+		t.Errorf("TestPatternWithContexts Case 5 (MatchAll): Expected node Alice, got %v", acc5.Paths[0].GetNode(0))
+	}
+
+	// Test Case 6: Match all - requires context not present (MatchAnyContext = false by default)
+	pat6 := Pattern{
+		{Name: "n6", Labels: NewStringSet("Person"), Properties: map[string]interface{}{"name": "Alice"}, Contexts: NewStringSet("ctxB")},
+	}
+	symbols6 := make(map[string]*PatternSymbol)
+	acc6 := &DefaultMatchAccumulator{}
+	if err := pat6.Run(graph, symbols6, acc6); err != nil {
+		t.Errorf("TestPatternWithContexts Case 6 (MatchAll): Run failed: %v", err)
+	}
+	if len(acc6.Paths) != 0 { // Alice (name:Alice, ctxA) does not have ctxB
+		t.Errorf("TestPatternWithContexts Case 6 (MatchAll): Expected 0 paths, got %d", len(acc6.Paths))
+	}
+
+	// Test Case 7: Match Any - single context in pattern, node has it
+	pat7 := Pattern{
+		{Name: "n7", Contexts: NewStringSet("ctxC"), MatchAnyContext: true},
+	}
+	symbols7 := make(map[string]*PatternSymbol)
+	acc7 := &DefaultMatchAccumulator{}
+	if err := pat7.Run(graph, symbols7, acc7); err != nil {
+		t.Errorf("TestPatternWithContexts Case 7 (MatchAny): Run failed: %v", err)
+	}
+	if len(acc7.Paths) != 1 { // Charlie (ctxC)
+		t.Errorf("TestPatternWithContexts Case 7 (MatchAny): Expected 1 path, got %d. Paths: %v", len(acc7.Paths), acc7.Paths)
+	} else if acc7.Paths[0].GetNode(0) != node4 {
+		t.Errorf("TestPatternWithContexts Case 7 (MatchAny): Expected node Charlie, got %v", acc7.Paths[0].GetNode(0))
+	}
+
+	// Test Case 8: Match Any - multiple contexts in pattern, node has one of them
+	// Pattern wants ctxD OR ctxA. Alice (ctxA), Bob (ctxA, ctxB), DocX (ctxD, ctxE)
+	pat8 := Pattern{
+		{Name: "n8", Contexts: NewStringSet("ctxD", "ctxA"), MatchAnyContext: true},
+	}
+	symbols8 := make(map[string]*PatternSymbol)
+	acc8 := &DefaultMatchAccumulator{}
+	if err := pat8.Run(graph, symbols8, acc8); err != nil {
+		t.Errorf("TestPatternWithContexts Case 8 (MatchAny): Run failed: %v", err)
+	}
+	if len(acc8.Paths) != 3 { // Alice, Bob, DocX
+		t.Errorf("TestPatternWithContexts Case 8 (MatchAny): Expected 3 paths, got %d. Paths: %v", len(acc8.Paths), acc8.Paths)
+	} else {
+		// Check that one of the matched nodes is node5 (DocX)
+		foundNode5 := false
+		for _, pth := range acc8.Paths {
+			if pth.GetNode(0) == node5 {
+				foundNode5 = true
+				break
+			}
+		}
+		if !foundNode5 {
+			t.Errorf("TestPatternWithContexts Case 8 (MatchAny): Expected node5 (DocX) to be among the matches.")
+		}
+	}
+
+	// Test Case 9: Match Any - multiple contexts in pattern, node has a different one (no match)
+	// Pattern wants ctxD OR ctxA. London (ctxB)
+	pat9 := Pattern{
+		{Name: "n9", Labels: NewStringSet("Location"), Contexts: NewStringSet("ctxD", "ctxA"), MatchAnyContext: true},
+	}
+	symbols9 := make(map[string]*PatternSymbol)
+	acc9 := &DefaultMatchAccumulator{}
+	if err := pat9.Run(graph, symbols9, acc9); err != nil {
+		t.Errorf("TestPatternWithContexts Case 9 (MatchAny): Run failed: %v", err)
+	}
+	if len(acc9.Paths) != 0 { // London (ctxB) does not have ctxD or ctxA
+		t.Errorf("TestPatternWithContexts Case 9 (MatchAny): Expected 0 paths, got %d. Paths: %v", len(acc9.Paths), acc9.Paths)
+	}
+
+	// Test Case 10: Match Any - with properties
+	// Pattern wants (name:Bob) AND (ctxD OR ctxB). Bob (name:Bob, ctxA, ctxB) -> Match
+	pat10 := Pattern{
+		{Name: "n10", Properties: map[string]interface{}{"name": "Bob"}, Contexts: NewStringSet("ctxD", "ctxB"), MatchAnyContext: true},
+	}
+	symbols10 := make(map[string]*PatternSymbol)
+	acc10 := &DefaultMatchAccumulator{}
+	if err := pat10.Run(graph, symbols10, acc10); err != nil {
+		t.Errorf("TestPatternWithContexts Case 10 (MatchAny): Run failed: %v", err)
+	}
+	if len(acc10.Paths) != 1 { // Bob
+		t.Errorf("TestPatternWithContexts Case 10 (MatchAny): Expected 1 path, got %d. Paths: %v", len(acc10.Paths), acc10.Paths)
+	} else if acc10.Paths[0].GetNode(0) != node2 {
+		t.Errorf("TestPatternWithContexts Case 10 (MatchAny): Expected node Bob, got %v", acc10.Paths[0].GetNode(0))
+	}
+
+	// Test Case 11: Match Any - empty context set in pattern (should match no nodes if interpreted strictly, or all if lenient? Let's assume strict: needs a context from the set)
+	// Current GetNodeFilterFunc: if contexts != nil && contexts.Len() > 0. So empty set means the context check is skipped.
+	// This behavior is consistent for both matchAll and matchAny. If context set is empty, context check is bypassed.
+	pat11 := Pattern{
+		{Name: "n11", Contexts: NewStringSet(), MatchAnyContext: true},
+	}
+	symbols11 := make(map[string]*PatternSymbol)
+	acc11 := &DefaultMatchAccumulator{}
+	if err := pat11.Run(graph, symbols11, acc11); err != nil {
+		t.Errorf("TestPatternWithContexts Case 11 (MatchAny, Empty Contexts): Run failed: %v", err)
+	}
+	// Expect all nodes, as context check is skipped if PatternItem.Contexts is empty.
+	// Nodes: node1, node2, node3, node4, node5, node6 (6 nodes)
+	if len(acc11.Paths) != 6 {
+		t.Errorf("TestPatternWithContexts Case 11 (MatchAny, Empty Contexts): Expected 6 paths, got %d. Paths: %v", len(acc11.Paths), acc11.Paths)
+	}
+
+	// Test Case 12: Match All - empty context set in pattern (MatchAnyContext = false)
+	// Should also skip context check and match all nodes.
+	pat12 := Pattern{
+		{Name: "n12", Contexts: NewStringSet(), MatchAnyContext: false}, // Or just omit MatchAnyContext
+	}
+	symbols12 := make(map[string]*PatternSymbol)
+	acc12 := &DefaultMatchAccumulator{}
+	if err := pat12.Run(graph, symbols12, acc12); err != nil {
+		t.Errorf("TestPatternWithContexts Case 12 (MatchAll, Empty Contexts): Run failed: %v", err)
+	}
+	if len(acc12.Paths) != 6 {
+		t.Errorf("TestPatternWithContexts Case 12 (MatchAll, Empty Contexts): Expected 6 paths, got %d. Paths: %v", len(acc12.Paths), acc12.Paths)
+	}
+
+	// Test Case 13: Match Any - specifically for node6 with ctxE
+	pat13 := Pattern{
+		{Name: "n13", Contexts: NewStringSet("ctxE"), MatchAnyContext: true},
+	}
+	symbols13 := make(map[string]*PatternSymbol)
+	acc13 := &DefaultMatchAccumulator{}
+	if err := pat13.Run(graph, symbols13, acc13); err != nil {
+		t.Errorf("TestPatternWithContexts Case 13 (MatchAny): Run failed: %v", err)
+	}
+	if len(acc13.Paths) != 2 { // DocX (ctxD, ctxE), DocY (ctxE)
+		t.Errorf("TestPatternWithContexts Case 13 (MatchAny): Expected 2 paths, got %d. Paths: %v", len(acc13.Paths), acc13.Paths)
+	} else {
+		foundNode6 := false
+		for _, pth := range acc13.Paths {
+			if pth.GetNode(0) == node6 {
+				foundNode6 = true
+				break
+			}
+		}
+		if !foundNode6 {
+			t.Errorf("TestPatternWithContexts Case 13 (MatchAny): Expected node6 (DocY) to be among the matches.")
+		}
+	}
+}

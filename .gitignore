@@ -2,7 +2,7 @@
 *.o
 *.a
 *.so
-.vscode
+!.vscode/launch.json
 
 
 # fresh
@@ -13,4 +13,74 @@ tmp
 *~
 *.sh
 __debug_bin
+
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+lpg # If you build a binary with this name
+*.test # Test binaries
+
+# Output of go coverage
+*.out
+coverage.html
+
+# Profiling output
+*.prof
+profile.out # Often used by pprof
+c.out # CGO coverage
+
+# Archives
+*.zip
+*.tar.gz
+*.rar
+
+# OS-generated files
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# IDE / Editor specific
+.idea/
+.vscode/*
+!.vscode/launch.json
+!.vscode/settings.json # Often useful to share
+!.vscode/tasks.json   # Often useful to share
+*.sublime-project
+*.sublime-workspace
+*.komodoproject
+
+# Backup files
+*~
+*.bak
+*.old
+*.orig
+*.swp
+.#* # Emacs auto-save files
+*.retry # From original
+
+# Go vendor directory
+vendor/
+
+# Build output
+dist/ # From original /dist
+build/
+release/
+
+# Log files
+*.log
+
+# Temporary files (from original)
+tmp/ # Ensure it's treated as a directory
+
+# Debugging output (from original)
+__debug_bin # From original
+
+# Shell scripts (from original - consider if these should always be ignored or versioned)
+# *.sh
 

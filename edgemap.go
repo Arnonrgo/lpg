@@ -29,6 +29,9 @@ type edgeMap struct {
 	labelMap       map[string]*list.Element
 	only           *Edge
 	n              int
+	// Cache for frequently accessed labels to avoid map lookups
+	cachedLabel string
+	cachedElem  *list.Element
 }
 
 func (em *edgeMap) lazyInit() {
@@ -147,7 +150,20 @@ func (em edgeMap) iteratorLabel(label string, listIndex int) EdgeIterator {
 	if em.n == 1 && label == em.only.label {
 		return &singleEdgeIterator{edge: em.only}
 	}
-	l := em.labelMap[label]
+
+	// Use cached element if available
+	var l *list.Element
+	if label == em.cachedLabel && em.cachedElem != nil {
+		l = em.cachedElem
+	} else {
+		l = em.labelMap[label]
+		// Update cache for future lookups
+		if l != nil {
+			em.cachedLabel = label
+			em.cachedElem = l
+		}
+	}
+
 	if l == nil {
 		return edgeIterator{&emptyIterator{}}
 	}
@@ -217,3 +233,128 @@ func (itr *allEdgesItr) Edge() *Edge {
 }
 
 func (itr *allEdgesItr) MaxSize() int { return itr.size }
+
+// forEachEdgeWithAnyLabel iterates edges matching any specified label, calling fn for each.
+// If labels is nil or empty, iterates all edges in the map.
+// Returns false if fn returns false, true otherwise.
+func (em *edgeMap) forEachEdgeWithAnyLabel(listIndex int, labels *StringSet, fn func(edge *Edge) bool) bool {
+	if em.n == 0 {
+		return true
+	}
+
+	if em.n == 1 {
+		// Handle single edge case directly
+		// If labels is nil or empty, always process; otherwise check Has
+		if labels == nil || labels.Len() == 0 || labels.Has(em.only.label) {
+			if !fn(em.only) {
+				return false // Callback requested stop
+			}
+		}
+		return true
+	}
+
+	// Handle multiple edges (map case)
+
+	// Fast path: if labels is nil or empty, iterate all edges
+	if labels == nil || labels.Len() == 0 {
+		// Use the allEdgesItr directly for better performance
+		itr := &allEdgesItr{
+			labelListCurrent: em.edgeLabelLists.Front(),
+			ix:               listIndex,
+			size:             em.n,
+		}
+		if itr.labelListCurrent != nil {
+			itr.labelListNext = itr.labelListCurrent.Next()
+			itr.next = itr.labelListCurrent.Value.(*edgeLabelList).edges.head
+		}
+
+		for itr.Next() {
+			if !fn(itr.current) {
+				return false
+			}
+		}
+		return true
+	}
+
+	// Use cached label if possible
+	if labels.Len() == 1 {
+		// Get the single label
+		var singleLabel string
+		labels.Iter(func(label string) bool {
+			singleLabel = label
+			return true // Stop after first label
+		})
+
+		// Use cached element if available
+		var lstElement *list.Element
+		if singleLabel == em.cachedLabel && em.cachedElem != nil {
+			lstElement = em.cachedElem
+		} else {
+			lstElement = em.labelMap[singleLabel]
+			// Update cache for future lookups
+			if lstElement != nil {
+				em.cachedLabel = singleLabel
+				em.cachedElem = lstElement
+			}
+		}
+
+		if lstElement != nil {
+			labelList := lstElement.Value.(*edgeLabelList)
+			currentEdge := labelList.edges.head
+			for currentEdge != nil {
+				if !fn(currentEdge) {
+					return false
+				}
+				currentEdge = currentEdge.listElements[listIndex].next
+			}
+		}
+		return true
+	}
+
+	// Multiple labels case
+	keepGoing := true
+	// Iterate through the provided labels
+	labels.Iter(func(label string) bool {
+		// Find the list element corresponding to the label in the map
+		var lstElement *list.Element
+		if label == em.cachedLabel && em.cachedElem != nil {
+			lstElement = em.cachedElem
+		} else {
+			lstElement = em.labelMap[label]
+			// Update cache for future lookups
+			if lstElement != nil {
+				em.cachedLabel = label
+				em.cachedElem = lstElement
+			}
+		}
+
+		if lstElement != nil {
+			// Get the actual list of edges for this label
+			labelList := lstElement.Value.(*edgeLabelList)
+			// Iterate through the edgeList for this label
+			currentEdge := labelList.edges.head
+			for currentEdge != nil {
+				if !fn(currentEdge) {
+					keepGoing = false
+					return false // Stop labels.Iter loop
+				}
+				currentEdge = currentEdge.listElements[listIndex].next
+			}
+		}
+		return keepGoing // Continue labels.Iter loop only if keepGoing is true
+	})
+	return keepGoing
+}
+
+func (em *edgeMap) GetEdges(listIndex int) Iterator {
+	if em.n == 0 {
+		return emptyIterator{}
+	}
+	if em.n == 1 {
+		return &singleEdgeIterator{edge: em.only}
+	}
+	return &allEdgesItr{
+		labelListCurrent: em.edgeLabelLists.Front(),
+		ix:               listIndex,
+	}
+}

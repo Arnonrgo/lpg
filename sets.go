@@ -16,16 +16,14 @@ package lpg
 
 import (
 	"container/list"
-	"github.com/kamstrup/intmap"
 )
 
 type graphElement interface{ *Node | *Edge | any }
 
 // A fastSet is a set of objects with constant-time
-// insertion/deletion, with iterator support
+// insertion/deletion, with iterator support (iteration order undefined).
 type fastSet struct {
-	n *intmap.Map[int, *list.Element]
-	l *list.List
+	n map[int]interface{} // Using standard Go map now
 }
 
 type fastMap struct {
@@ -39,6 +37,13 @@ func newFastMap() *fastMap {
 		l: list.New(),
 	}
 }
+
+func emptyFastMap(size int) *fastMap {
+	return &fastMap{
+		n: make(map[string]*list.Element, size),
+		l: list.New(),
+	}
+}
 func (f *fastMap) init() {
 	f.n = make(map[string]*list.Element)
 	f.l.Init()
@@ -47,12 +52,14 @@ func (f *fastMap) init() {
 func (f *fastMap) size() int {
 	return len(f.n)
 }
+
 func (f *fastMap) add(id string, item interface{}) bool {
-	_, exists := f.n[id]
+	el, exists := f.n[id]
 	if exists {
+		el.Value = item
 		return false
 	}
-	el := f.l.PushBack(item)
+	el = f.l.PushBack(item)
 	f.n[id] = el
 	return true
 }
@@ -83,60 +90,93 @@ func (f *fastMap) iterator() Iterator {
 	return &listIterator{next: f.l.Front(), size: f.size()}
 }
 
-func newFastSet() *fastSet {
+// newFastSet accepts an optional size hint for the underlying map.
+func newFastSet(hint ...int) *fastSet {
+	initialSize := 1 // Default hint
+	if len(hint) > 0 && hint[0] > 0 {
+		initialSize = hint[0]
+	}
 	return &fastSet{
-		n: intmap.New[int, *list.Element](10),
-		//m: make(map[int]*list.Element),
-		l: list.New(),
+		n: make(map[int]interface{}, initialSize),
 	}
 }
 
-func (f *fastSet) init() {
-	f.n = intmap.New[int, *list.Element](10)
-	//f.m = make(map[int]*list.Element)
-	f.l = list.New()
+func (f *fastSet) init(hint ...int) {
+	initialSize := 10 // Default hint
+	if len(hint) > 0 && hint[0] > 0 {
+		initialSize = hint[0]
+	}
+	f.n = make(map[int]interface{}, initialSize)
+	// f.l = list.New() // Remove list creation
 }
 
 func (f *fastSet) size() int {
-	return f.l.Len()
+	return len(f.n)
 }
 
 // Add a new item. Returns true if added
 func (f *fastSet) add(id int, item interface{}) bool {
-	_, exists := f.n.Get(id)
-	if exists {
+	if _, exists := f.n[id]; !exists {
+		// el := f.l.PushBack(item) // No longer using list
+		f.n[id] = item // Directly add/update in map
+		return true
+	} else {
+		// Update the item if it already exists (optional, depends on desired set semantics)
+		f.n[id] = item
 		return false
 	}
-	el := f.l.PushBack(item)
-	f.n.Put(id, el)
-	return true
 }
 
 func (f *fastSet) get(id int) (interface{}, bool) {
-	el, ok := f.n.Get(id)
-	if !ok {
-		return nil, false
-	}
-	return el.Value, true
+	// Get item directly from map
+	return f.n[id], true
 }
 
 // Remove an item. Returns true if removed
 func (f *fastSet) remove(id int) bool {
-	el, ext := f.n.Get(id)
-	if !ext {
-		return false
+	if _, exists := f.n[id]; exists {
+		delete(f.n, id)
+		return true
 	}
-	f.n.Del(id)
-	f.l.Remove(el)
-	return true
+	return false
 }
 
 func (f *fastSet) has(id int) bool {
-	return f.n.Has(id)
+	_, exists := f.n[id]
+	return exists
+}
+
+// Iterator for fastSet - iterates directly over the Go map (random order).
+// Stores items in a slice upon creation for iteration.
+type mapIterator struct { // Renamed from intMapIterator
+	items []interface{}
+	index int
+	sz    int
+}
+
+func (it *mapIterator) Next() bool {
+	it.index++
+	return it.index < it.sz
+}
+
+func (it *mapIterator) Value() interface{} {
+	if it.index < 0 || it.index >= it.sz {
+		return nil // Or panic
+	}
+	return it.items[it.index]
+}
+
+func (it *mapIterator) MaxSize() int {
+	return it.sz
 }
 
 func (f *fastSet) iterator() Iterator {
-	return &listIterator{next: f.l.Front(), size: f.size()}
+	size := len(f.n)
+	items := make([]interface{}, 0, size)
+	for _, value := range f.n { // Iterate using standard map range
+		items = append(items, value)
+	}
+	return &mapIterator{items: items, index: -1, sz: size} // Use the renamed iterator
 }
 
 type NodeSet struct {
