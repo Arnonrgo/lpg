@@ -264,6 +264,17 @@ func BenchmarkFindEdgeProp(b *testing.B) {
 	}
 }
 
+// countingAccumulator is a MatchAccumulator that only counts results, no storage.
+// Used to test filtering performance independent of result storage overhead.
+type countingAccumulator struct {
+	count int
+}
+
+// StoreResult just increments the count.
+func (acc *countingAccumulator) StoreResult(_ *MatchContext, path *Path, symbols map[string]interface{}) {
+	acc.count++
+}
+
 // --- Single Node Benchmarks --- //
 
 // --- Medium Graph Size --- //
@@ -310,6 +321,22 @@ func BenchmarkNode_ContextOnly_MatchAny_Medium(b *testing.B) {
 		if err != nil {
 			b.Fatal(err)
 		}
+	}
+}
+
+func BenchmarkNode_ContextOnly_MatchAny_Medium_NoStore(b *testing.B) {
+	g := createBenchmarkGraph(benchMediumNodes, benchMediumEdges, benchAvgContextsPerNode, benchHubFactor, b)
+	pattern := Pattern{
+		PatternItem{Contexts: NewStringSet(benchContextPool[0], benchContextPool[1]), MatchAnyContext: true, Name: "n"},
+	}
+	b.ReportAllocs()
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		countingAcc := countingAccumulator{}
+		if err := pattern.Run(g, nil, &countingAcc); err != nil {
+			b.Fatal(err)
+		}
+		// b.Logf("Found %d nodes", countingAcc.count) // Optional: log if needed during dev
 	}
 }
 
@@ -390,6 +417,21 @@ func BenchmarkNode_ContextOnly_MatchAny_Large(b *testing.B) {
 	}
 }
 
+func BenchmarkNode_ContextOnly_MatchAny_Large_NoStore(b *testing.B) {
+	g := createBenchmarkGraph(benchLargeNodes, benchLargeEdges, benchAvgContextsPerNode, benchHubFactor, b)
+	pattern := Pattern{
+		PatternItem{Contexts: NewStringSet(benchContextPool[0], benchContextPool[1]), MatchAnyContext: true, Name: "n"},
+	}
+	b.ReportAllocs()
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		countingAcc := countingAccumulator{}
+		if err := pattern.Run(g, nil, &countingAcc); err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
 func BenchmarkNode_Combined_LabelContext_MatchAll_Large(b *testing.B) {
 	g := createBenchmarkGraph(benchLargeNodes, benchLargeEdges, benchAvgContextsPerNode, benchHubFactor, b)
 	pattern := Pattern{
@@ -418,6 +460,75 @@ func BenchmarkNode_Combined_LabelContext_MatchAny_Large(b *testing.B) {
 			b.Fatal(err)
 		}
 	}
+	// b.Logf("Nodes found: %d", len(nodes))
+}
+
+// Benchmark for MatchAny with one common and one (hopefully) rare context - Medium Graph, NoStore
+func BenchmarkNode_ContextOnly_MatchAny_CommonRare_Medium_NoStore(b *testing.B) {
+	g := createBenchmarkGraph(benchMediumNodes, benchMediumEdges, benchAvgContextsPerNode, benchHubFactor, b)
+
+	commonCtx := benchContextPool[0]                   // e.g., "ctx0"
+	rareCtx := benchContextPool[benchUniqueContexts-1] // e.g., "ctx49", hoping it's less frequent
+
+	// Optional: Pre-run to count actual occurrences for benchmark context.
+	// commonCount, rareCount, unionCount := 0, 0, 0
+	// tempNodeIterPre := g.GetNodes()
+	// for tempNodeIterPre.Next() {
+	// 	node := tempNodeIterPre.Node()
+	// 	hasCommon := node.GetContexts().Has(commonCtx)
+	// 	hasRare := node.GetContexts().Has(rareCtx)
+	// 	if hasCommon { commonCount++ }
+	// 	if hasRare { rareCount++ }
+	// 	if hasCommon || hasRare { unionCount++ }
+	// }
+	// b.Logf("Medium Graph - CommonRare Pre-check: CommonCtx('%s'):%d, RareCtx('%s'):%d, Union:%d", commonCtx, commonCount, rareCtx, rareCount, unionCount)
+
+	p := Pattern{PatternItem{Contexts: NewStringSet(commonCtx, rareCtx), MatchAnyContext: true}}
+	acc := &countingAccumulator{}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		acc.count = 0 // Reset counter
+		err := p.Run(g, nil, acc)
+		if err != nil {
+			b.Fatalf("Pattern run failed: %v", err)
+		}
+	}
+	// b.Logf("Nodes found by accumulator: %d", acc.count)
+}
+
+// Benchmark for MatchAny with one common and one (hopefully) rare context - Large Graph, NoStore
+func BenchmarkNode_ContextOnly_MatchAny_CommonRare_Large_NoStore(b *testing.B) {
+	g := createBenchmarkGraph(benchLargeNodes, benchLargeEdges, benchAvgContextsPerNode, benchHubFactor, b)
+
+	commonCtx := benchContextPool[0]                   // e.g., "ctx0"
+	rareCtx := benchContextPool[benchUniqueContexts-1] // e.g., "ctx49", hoping it's less frequent
+
+	// Optional: Pre-run to count actual occurrences for benchmark context.
+	// commonCount, rareCount, unionCount := 0, 0, 0
+	// tempNodeIterPre := g.GetNodes()
+	// for tempNodeIterPre.Next() {
+	// 	node := tempNodeIterPre.Node()
+	// 	hasCommon := node.GetContexts().Has(commonCtx)
+	// 	hasRare := node.GetContexts().Has(rareCtx)
+	// 	if hasCommon { commonCount++ }
+	// 	if hasRare { rareCount++ }
+	// 	if hasCommon || hasRare { unionCount++ }
+	// }
+	// b.Logf("Large Graph - CommonRare Pre-check: CommonCtx('%s'):%d, RareCtx('%s'):%d, Union:%d", commonCtx, commonCount, rareCtx, rareCount, unionCount)
+
+	p := Pattern{PatternItem{Contexts: NewStringSet(commonCtx, rareCtx), MatchAnyContext: true}}
+	acc := &countingAccumulator{}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		acc.count = 0 // Reset counter
+		err := p.Run(g, nil, acc)
+		if err != nil {
+			b.Fatalf("Pattern run failed: %v", err)
+		}
+	}
+	// b.Logf("Nodes found by accumulator: %d", acc.count)
 }
 
 // --- Two-Hop Path Benchmarks --- //

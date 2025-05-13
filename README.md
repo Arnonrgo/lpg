@@ -12,6 +12,7 @@ Main changes vs original
 * added support for contexts (something in the middle between labels and properties) 
 * changed the behavior of Find to work more logically (e.g. return empty on misses rather than all nodes/edges)
 * properties are now converted to strings regardless of original type
+* Optimized query planning for context-based searches: `estimateNodeSize` now leverages the `nodesByContext` index, significantly improving performance for queries filtering by node contexts, especially for "match all" scenarios.
 
 
 This labeled property graph package implements the openCypher model of

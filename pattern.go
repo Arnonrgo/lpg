@@ -14,7 +14,10 @@
 
 package lpg
 
-import "fmt"
+import (
+	"fmt"
+	"math"
+)
 
 type ErrNodeVariableExpected string
 
@@ -121,6 +124,8 @@ func (p PatternItem) isConstrainedEdges(ctx *MatchContext) (*EdgeSet, error) {
 func (p *PatternItem) estimateNodeSize(g *Graph, symbols map[string]*PatternSymbol) (NodeIterator, int) {
 	max := -1
 	var ret NodeIterator
+
+	// If labels are present, use label index
 	if p.Labels != nil && p.Labels.Len() > 0 {
 		itr := g.index.nodesByLabel.IteratorAllLabels(p.Labels)
 		if sz := itr.MaxSize(); sz != -1 {
@@ -128,6 +133,9 @@ func (p *PatternItem) estimateNodeSize(g *Graph, symbols map[string]*PatternSymb
 			ret = itr
 		}
 	}
+
+	// If properties are present, use property index
+	// This can refine the estimate if properties are more restrictive or if no labels were given
 	if p.Properties != nil && len(p.Properties) > 0 {
 		for k, v := range p.Properties {
 			prop := fmt.Sprintf("%v", v)
@@ -136,7 +144,7 @@ func (p *PatternItem) estimateNodeSize(g *Graph, symbols map[string]*PatternSymb
 				continue
 			}
 			maxSize := itr.MaxSize()
-			if maxSize == -1 {
+			if maxSize == -1 { // Cannot determine size from this property iterator
 				continue
 			}
 			if max == -1 || maxSize < max {
@@ -145,22 +153,117 @@ func (p *PatternItem) estimateNodeSize(g *Graph, symbols map[string]*PatternSymb
 			}
 		}
 	}
+
+	// NEW: If contexts are present, use context index.
+	// This can refine the estimate further if contexts are more restrictive
+	// or if no labels/properties were given.
+	// This estimation is only performed if there are no labels and no properties,
+	// or if context estimation is more restrictive.
+	// For now, let's place it to run if no specific iterator has been chosen yet (ret == nil) OR
+	// if it can provide a better estimate.
+	// To be more precise, we calculate context estimate and then compare.
+	if p.Contexts != nil && p.Contexts.Len() > 0 && g.index.nodesByContext != nil {
+		contextEstimateMax := -1
+		var contextEstimateRet NodeIterator
+
+		if p.MatchAnyContext {
+			iteratorsForReturn := make([]Iterator, 0, p.Contexts.Len())
+			estimatedSizeSum := 0
+			hasAnyValidIter := false
+
+			for _, contextValue := range p.Contexts.Slice() {
+				foundIter := g.index.nodesByContext.find(contextValue) // Returns Iterator
+				if foundIter != nil {
+					iteratorsForReturn = append(iteratorsForReturn, foundIter)
+					currentSize := foundIter.MaxSize()
+					if currentSize > 0 {
+						estimatedSizeSum += currentSize
+					}
+					// Whether currentSize is 0 or >0, if we found an iterator for a context, it's a valid part of MatchAny processing.
+					hasAnyValidIter = true
+				}
+			}
+
+			if !hasAnyValidIter || len(iteratorsForReturn) == 0 {
+				contextEstimateMax = 0
+				contextEstimateRet = &nodeIterator{emptyIterator{}}
+			} else {
+				contextEstimateMax = estimatedSizeSum // Overestimate, but preserves iterator integrity
+				multiItRet := MultiIterator(iteratorsForReturn...)
+				uniqueItRet := makeUniqueIterator(multiItRet)
+				contextEstimateRet = nodeIterator{uniqueItRet}
+			}
+		} else { // MatchAll contexts
+			minIterSize := math.MaxInt32
+			var bestIterForMatchAll NodeIterator
+			foundValidContext := false
+
+			for _, contextValue := range p.Contexts.Slice() {
+				genericIter := g.index.nodesByContext.find(contextValue) // Returns Iterator
+
+				// Wrap the generic Iterator to make it a NodeIterator for use in this block.
+				// If genericIter is emptyIterator{}, nodeIterator{genericIter}.MaxSize() will be 0.
+				wrappedNodeIter := nodeIterator{genericIter}
+
+				// if nodeIter == nil { ... } // Original check based on nil, now use MaxSize or type assertion if needed
+				// For robustness, explicitly handle if find returns an iterator that effectively means 'not found' or 'empty'.
+				// An emptyIterator will have MaxSize 0. A valid iterator from find() also reports MaxSize.
+				if wrappedNodeIter.MaxSize() == 0 { // Check MaxSize on the wrapped iterator
+					minIterSize = 0
+					bestIterForMatchAll = &nodeIterator{emptyIterator{}} // Consistent empty iterator
+					foundValidContext = true                             // Mark as found to use this 0 result
+					break
+				}
+
+				currentIterSize := wrappedNodeIter.MaxSize()
+				// Note: Original code had a check: if currentIterSize == 0 after nodeIter != nil.
+				// This is now covered by wrappedNodeIter.MaxSize() == 0 check above.
+
+				if currentIterSize < minIterSize {
+					minIterSize = currentIterSize
+					bestIterForMatchAll = wrappedNodeIter // Assign the NodeIterator compliant wrappedNodeIter
+				}
+				foundValidContext = true
+			}
+
+			if foundValidContext {
+				contextEstimateMax = minIterSize
+				contextEstimateRet = bestIterForMatchAll
+			} else { // Should not happen if p.Contexts.Len() > 0, but as a safeguard
+				contextEstimateMax = 0
+				contextEstimateRet = &nodeIterator{emptyIterator{}}
+			}
+		}
+
+		// Compare context-based estimate with any prior estimate (label/property)
+		if contextEstimateRet != nil && (ret == nil || (contextEstimateMax != -1 && contextEstimateMax < max)) {
+			max = contextEstimateMax
+			ret = contextEstimateRet
+		}
+	}
+
+	// If a variable name is defined, it further constrains the selection
 	if len(p.Name) > 0 {
 		sym, ok := symbols[p.Name]
 		if ok {
-			if sym.Nodes == nil {
+			if sym.Nodes == nil { // Variable is bound, but to an empty set of nodes
 				max = 0
 				ret = &nodeIterator{emptyIterator{}}
-			} else if max == -1 || sym.Nodes.Len() < max {
+			} else if ret == nil || (sym.Nodes.Len() < max) { // Variable is more restrictive
 				max = sym.Nodes.Len()
 				ret = sym.Nodes.Iterator()
 			}
 		}
 	}
+
+	// If no specific iterator was chosen by labels, properties, contexts, or bound variable
 	if ret == nil {
 		ret = g.GetNodes()
+		// max = ret.MaxSize() // Avoid re-assigning max if it's already -1 from ret.MaxSize()
 		if sz := ret.MaxSize(); sz != -1 {
 			max = sz
+		} else {
+			max = -1 // Ensure max is -1 if GetNodes().MaxSize() is -1
 		}
 	}
 	return ret, max
